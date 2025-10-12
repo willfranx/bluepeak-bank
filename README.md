@@ -39,7 +39,29 @@ This application simulates a basic banking system with user authentication, bala
 - PostgreSQL (v12 or higher)
 - npm or yarn
 
+OR
+
+- Docker and Docker Compose (for containerized deployment)
+
 ## Setup Instructions
+
+### Option 1: Docker Setup (Recommended for Quick Start)
+
+The easiest way to run the application is using Docker Compose:
+
+```bash
+# Start all services (database, backend, frontend)
+docker-compose up
+
+# Access the application at http://localhost:3000
+```
+
+To stop the services:
+```bash
+docker-compose down
+```
+
+### Option 2: Manual Setup
 
 ### 1. Database Setup
 
