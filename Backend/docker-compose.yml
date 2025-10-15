@@ -1,0 +1,31 @@
+services:
+  db:
+    image: postgres
+    container_name: bluepeak-db
+    environment:
+      POSTGRES_USER: user123
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: db123
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  backend:
+    build: .
+    container_name: bluepeak-backend
+    ports:
+      - "3000:3000"
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: user123
+      DB_PASSWORD: password123
+      DB_NAME: db123
+    depends_on:
+      - db
+    volumes:
+      - .:/usr/src/app
+
+volumes:
+  db_data:
