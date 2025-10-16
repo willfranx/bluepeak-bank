@@ -3,16 +3,16 @@ import { Link } from 'react-router-dom';
 
 export default function NavBar({ user, onLogout }) {
   return (
-    <nav style={{ padding: 12, borderBottom: '1px solid #ddd', display: 'flex', justifyContent: 'space-between' }}>
-      <div>
-        <Link to="/accounts" style={{ marginRight: 12 }}>Accounts</Link>
-        <Link to="/transfer" style={{ marginRight: 12 }}>Transfer</Link>
+    <nav className="navbar">
+      <div className="nav-left">
+        <Link to="/accounts">Accounts</Link>
+        <Link to="/transfer">Transfer</Link>
       </div>
-      <div>
+      <div className="nav-right">
         {user ? (
           <>
-            <span style={{ marginRight: 12 }}>Hi, {user.username}</span>
-            <button onClick={onLogout}>Logout</button>
+            <span className="nav-username">Hi, {user.username}</span>
+            <button className="btn secondary" onClick={onLogout}>Logout</button>
           </>
         ) : (
           <Link to="/login">Login</Link>

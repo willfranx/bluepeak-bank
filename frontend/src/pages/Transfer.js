@@ -27,40 +27,36 @@ export default function Transfer({ accounts, onTransfer }) {
   };
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>Transfer Funds</h2>
-      <form onSubmit={send}>
-        <div style={{ marginBottom: 8 }}>
-          <label>
-            From:{' '}
+    <div className="App-body">
+      <div className="card">
+        <h2>Transfer Funds</h2>
+        <form onSubmit={send} className="container">
+          <div className="form-row">
+            <label>From</label>
             <select value={fromId} onChange={(e) => setFromId(e.target.value)}>
               {accounts.map((a) => (
                 <option key={a.id} value={a.id}>{a.name} (${a.balance.toFixed(2)})</option>
               ))}
             </select>
-          </label>
-        </div>
-        <div style={{ marginBottom: 8 }}>
-          <label>
-            To:{' '}
+          </div>
+          <div className="form-row">
+            <label>To</label>
             <select value={toId} onChange={(e) => setToId(e.target.value)}>
               {accounts.map((a) => (
                 <option key={a.id} value={a.id}>{a.name} (${a.balance.toFixed(2)})</option>
               ))}
             </select>
-          </label>
-        </div>
-        <div style={{ marginBottom: 8 }}>
-          <label>
-            Amount:{' '}
+          </div>
+          <div className="form-row">
+            <label>Amount</label>
             <input value={amount} onChange={(e) => setAmount(e.target.value)} />
-          </label>
-        </div>
-        <div>
-          <button type="submit">Send</button>
-        </div>
-      </form>
-      {message && <p style={{ marginTop: 12 }}>{message}</p>}
+          </div>
+          <div>
+            <button className="btn" type="submit">Send</button>
+          </div>
+        </form>
+        {message && <p className="message">{message}</p>}
+      </div>
     </div>
   );
 }

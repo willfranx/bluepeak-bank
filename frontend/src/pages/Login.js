@@ -10,20 +10,20 @@ export default function Login({ onLogin }) {
   };
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>Login</h2>
-      <form onSubmit={submit}>
-        <div>
-          <label>
-            Username:{' '}
-            <input value={username} onChange={(e) => setUsername(e.target.value)} />
-          </label>
-        </div>
-        <div style={{ marginTop: 12 }}>
-          <button type="submit">Login</button>
-        </div>
-      </form>
-      <p style={{ marginTop: 12, color: '#666' }}>Tip: any username will log you in for this demo.</p>
+    <div className="App-body">
+      <div className="card">
+        <h2>Login</h2>
+        <form onSubmit={submit} className="container">
+          <div className="form-row">
+            <label>Username</label>
+            <input value={username} onChange={(e) => setUsername(e.target.value)} type="text" />
+          </div>
+          <div className="form-row">
+            <button className="btn" type="submit">Login</button>
+          </div>
+        </form>
+        <p className="message">Tip: any username will log you in for this demo.</p>
+      </div>
     </div>
   );
 }
