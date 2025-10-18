@@ -1,20 +1,20 @@
-# Use the latest LTS version of Node.js
-FROM node:22-alpine AS base
- 
-# Set the working directory inside the container
+# Use official Node LTS image
+FROM node:22-alpine
+
+# Set working directory inside container
 WORKDIR /app
- 
-# Copy package.json and package-lock.json
+
+# Copy package files first (for caching)
 COPY package*.json ./
- 
+
 # Install dependencies
 RUN npm install
- 
-# Copy the rest of your application files
+
+# Copy the rest of the source code
 COPY . .
- 
-# Expose the port your app runs on
+
+# Expose port 3000 for React
 EXPOSE 3000
- 
-# Define the command to run your app
+
+# Start the React dev server
 CMD ["npm", "start"]

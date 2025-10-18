@@ -1,20 +1,20 @@
-# Official Node.js LTS image
+# Use official Node LTS image
 FROM node:22-alpine
 
 # Set working directory
-WORKDIR /usr/src/app
+WORKDIR /app
 
-# Copy package files
+# Copy package files first
 COPY package*.json ./
 
 # Install dependencies
 RUN npm install
 
-# Copy all source code
+# Copy source code
 COPY . .
 
-# Expose the same port as server
-EXPOSE 3000
+# Expose port 8000
+EXPOSE 8000
 
-# Start the server
+# Start the backend with nodemon for hot reload
 CMD ["npm", "run", "dev"]

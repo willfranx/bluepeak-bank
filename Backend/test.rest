@@ -1,17 +1,17 @@
 ### Check server root
-GET http://localhost:3000
+GET http://localhost:8000
 Accept: application/json
 
 ###
 
 ### Setup database table
-GET http://localhost:3000/users/setup
+GET http://localhost:8000/users/setup
 Accept: application/json
 
 ###
 
 ### Add a new user
-POST http://localhost:3000/users
+POST http://localhost:8000/users
 Content-Type: application/json
 
 {
@@ -22,7 +22,7 @@ Content-Type: application/json
 ###
 
 ### Add another user
-POST http://localhost:3000/users
+POST http://localhost:8000/users
 Content-Type: application/json
 
 {
@@ -33,19 +33,19 @@ Content-Type: application/json
 ###
 
 ### Get all users
-GET http://localhost:3000/users
+GET http://localhost:8000/users
 Accept: application/json
 
 ###
 
 ### Get a specific user by ID (replace :id with actual user ID)
-GET http://localhost:3000/users/1
+GET http://localhost:8000/users/1
 Accept: application/json
 
 ###
 
 ### Update a user by ID (replace :id with actual user ID)
-PUT http://localhost:3000/users/2
+PUT http://localhost:8000/users/2
 Content-Type: application/json
 
 {
@@ -56,13 +56,13 @@ Content-Type: application/json
 ###
 
 ### Delete a user by ID (replace :id with actual user ID)
-DELETE http://localhost:3000/users/1
+DELETE http://localhost:8000/users/1
 Accept: application/json
 
 ###
 
 ### Add user with missing fields (should fail)
-POST http://localhost:3000/users
+POST http://localhost:8000/users
 Content-Type: application/json
 
 {
@@ -72,7 +72,7 @@ Content-Type: application/json
 ###
 
 ### Add user with invalid balance (edge case)
-POST http://localhost:3000/users
+POST http://localhost:8000/users
 Content-Type: application/json
 
 {
