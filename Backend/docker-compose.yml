@@ -1,7 +1,8 @@
 services:
   db:
-    image: postgres
+    image: postgres:17
     container_name: bluepeak-db
+    restart: always
     environment:
       POSTGRES_USER: user123
       POSTGRES_PASSWORD: password123
@@ -22,10 +23,13 @@ services:
       DB_USER: user123
       DB_PASSWORD: password123
       DB_NAME: db123
+      NODE_ENV: development
     depends_on:
       - db
     volumes:
       - .:/usr/src/app
+      - /usr/src/app/node_modules
+    command: npm run dev
 
 volumes:
   db_data:
