@@ -1,4 +1,7 @@
+#docker-compose.yml: describes container build, config, and connections.
 services:
+
+#PostgreSQL container.
   db:
     image: postgres:17
     container_name: bluepeak-db
@@ -12,6 +15,7 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data
 
+#Node.js container.
   backend:
     build: .
     container_name: bluepeak-backend
@@ -32,4 +36,5 @@ services:
     command: npm run dev
 
 volumes:
+#Stores PostgreSQL data files persistentlty outside the continer filesystem
   db_data:
