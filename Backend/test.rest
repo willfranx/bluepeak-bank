@@ -39,7 +39,7 @@ Accept: application/json
 ###
 
 ### Update a user by ID (replace :userid with actual user ID)
-PUT http://localhost:3000/users/2
+PUT http://localhost:3000/users/6
 Content-Type: application/json
 
 {
