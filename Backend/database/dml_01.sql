@@ -6,7 +6,7 @@ Users, Transactions, and Accounts.
 */
 
 --Seed data for Users table.
-INSERT INTO Users (userName, password) VALUES
+INSERT INTO users (name, password) VALUES
 ('Ahmed', 'Austin123'),
 ('Chris', '!Portland!'),
 ('Keegan', 'Pitt5burgh'),
@@ -15,7 +15,7 @@ INSERT INTO Users (userName, password) VALUES
 ;
 
 --Seed data for Accounts table.
-INSERT INTO Accounts (userId, accountType, balance) VALUES
+INSERT INTO accounts (userid, type, balance) VALUES
 (1, 'checking', 467.00),
 (1, 'saving', 80000.00),
 (2, 'saving', 1000.00),
@@ -27,7 +27,7 @@ INSERT INTO Accounts (userId, accountType, balance) VALUES
 ;
 
 --Seed data for Transactions table.
-INSERT INTO Transactions (sourceAccountId, destinationAccountId, amount) VALUES
+INSERT INTO transactions (srcid, desid, amount) VALUES
 (2, 1, 467.00),
 (6, 1, 145.45),
 (8, 7, 10.01)

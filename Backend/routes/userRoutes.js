@@ -1,18 +1,15 @@
 import express from "express";
-import { setupTable, addUser, getUsers, getUser, updateUser, deleteUser } from "../controllers/userController.js";
+import { addUser, getUsers, getUser, updateUser, deleteUser } from "../controllers/userController.js";
 
 const router = express.Router();
-
-// admin route
-router.get("/setup", setupTable);
 
 // User routes
 
 router.post("/", addUser);
 router.get("/", getUsers);
-router.get("/:id", getUser);
-router.put("/:id", updateUser)
-router.delete("/:id", deleteUser)
+router.get("/:userid", getUser);
+router.put("/:userid", updateUser)
+router.delete("/:userid", deleteUser)
 
 
 

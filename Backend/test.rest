@@ -4,19 +4,13 @@ Accept: application/json
 
 ###
 
-### Setup database table
-GET http://localhost:3000/users/setup
-Accept: application/json
-
-###
-
 ### Add a new user
 POST http://localhost:3000/users
 Content-Type: application/json
 
 {
-  "username": "ahmed",
-  "balance": 500
+  "name": "Hodor",
+  "password": "hodor"
 }
 
 ###
@@ -26,8 +20,8 @@ POST http://localhost:3000/users
 Content-Type: application/json
 
 {
-  "username": "Will",
-  "balance": 750
+  "name": "Obiwan",
+  "password": "hellothere1"
 }
 
 ###
@@ -38,24 +32,24 @@ Accept: application/json
 
 ###
 
-### Get a specific user by ID (replace :id with actual user ID)
+### Get a specific user by ID (replace :userid with actual user ID)
 GET http://localhost:3000/users/1
 Accept: application/json
 
 ###
 
-### Update a user by ID (replace :id with actual user ID)
+### Update a user by ID (replace :userid with actual user ID)
 PUT http://localhost:3000/users/2
 Content-Type: application/json
 
 {
-  "name": "Ahmed Updated",
-  "balance": 600
+  "name": "Hodor Hodor",
+  "password": "hodor"
 }
 
 ###
 
-### Delete a user by ID (replace :id with actual user ID)
+### Delete a user by ID (replace :userid with actual user ID)
 DELETE http://localhost:3000/users/1
 Accept: application/json
 
@@ -66,16 +60,7 @@ POST http://localhost:3000/users
 Content-Type: application/json
 
 {
-  "username": "missingBalance"
+  "name": "forgotPassword"
 }
 
 ###
-
-### Add user with invalid balance (edge case)
-POST http://localhost:3000/users
-Content-Type: application/json
-
-{
-  "username": "invalidBalance",
-  "balance": "abc"
-}
