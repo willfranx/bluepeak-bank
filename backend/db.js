@@ -1,7 +1,7 @@
 //db.js: Node.js DB config file for PostgreSQL.
 //Import PostgreSQL client
-import pkg from "pg";
-const { Pool } = pkg;
+import pg from "pg";
+const { Pool } = pg;
 
 //Connection Pools: reusable DB connections.
 const pool = new Pool({
