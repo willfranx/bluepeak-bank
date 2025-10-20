@@ -1,0 +1,65 @@
+### Check server root
+GET http://localhost:8000
+Accept: application/json
+
+###
+
+### Add a new user
+POST http://localhost:8000/users
+Content-Type: application/json
+
+{
+  "name": "Hodor",
+  "password": "hodor"
+}
+
+###
+
+### Add another user
+POST http://localhost:8000/users
+Content-Type: application/json
+
+{
+  "name": "Obiwan",
+  "password": "hellothere1"
+}
+
+###
+
+### Get all users
+GET http://localhost:8000/users
+Accept: application/json
+
+###
+
+### Get a specific user by ID (replace :userid with actual user ID)
+GET http://localhost:8000/users/1
+
+###
+
+### Update a user by ID (replace :userid with actual user ID)
+PUT http://localhost:8000/users/6
+Content-Type: application/json
+
+{
+  "name": "Hodor Hodor",
+  "password": "hodor"
+}
+
+###
+
+### Delete a user by ID (replace :userid with actual user ID)
+DELETE http://localhost:8000/users/1
+Accept: application/json
+
+###
+
+### Add user with missing fields (should fail)
+POST http://localhost:8000/users
+Content-Type: application/json
+
+{
+  "name": "forgotPassword"
+}
+
+###

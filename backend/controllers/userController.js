@@ -1,34 +1,17 @@
 import pool from "../db.js";
 
-// Create table (dev only)
-export const setupTable = async (req, res) => {
-  try {
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(100),
-        balance DECIMAL
-      )
-    `);
-    res.status(200).json({ success: true, message: "Table created successfully!" });
-  } catch (error) {
-    console.error("Error creating table:", error);
-    res.status(500).json({ success: false, message: "Error creating table" });
-  }
-};
-
 // Add a new user
 export const addUser = async (req, res) => {
-  const { username, balance } = req.body;
+  const { name, password } = req.body;
 
-  if (!username || balance === undefined) {
-    return res.status(400).json({ success: false, message: "Username and balance are required" });
+  if (!name || !password ) {
+    return res.status(400).json({ success: false, message: "Username and password are required" });
   }
 
   try {
     const result = await pool.query(
-      "INSERT INTO users (name, balance) VALUES ($1, $2) RETURNING *",
-      [username, balance]
+      "INSERT INTO users (name, password) VALUES ($1, $2) RETURNING *",
+      [name, password]
     );
 
     res.status(201).json({ success: true, data: result.rows[0], message: "User added successfully!" });
@@ -51,10 +34,10 @@ export const getUsers = async (req, res) => {
 
 // Get a specific user
 export const getUser = async (req, res) => {
-  const { id } = req.params;
+  const { userid } = req.params;
 
   try {
-    const result = await pool.query("SELECT * FROM users WHERE id = $1", [id]);
+    const result = await pool.query("SELECT * FROM users WHERE userid = $1", [userid]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, message: "User not found" });
@@ -69,17 +52,17 @@ export const getUser = async (req, res) => {
 
 // Update a user
 export const updateUser = async (req, res) => {
-  const { id } = req.params;
-  const { name, balance } = req.body;
+  const { userid } = req.params;
+  const { name, password } = req.body;
 
-  if (!name && balance === undefined) {
-    return res.status(400).json({ success: false, message: "At least one field (name or balance) is required" });
+  if (!name && !password) {
+    return res.status(400).json({ success: false, message: "At least one field (name or Password) is required" });
   }
 
   try {
     const result = await pool.query(
-      "UPDATE users SET name = COALESCE($1, name), balance = COALESCE($2, balance) WHERE id = $3 RETURNING *",
-      [name, balance, id]
+      "UPDATE users SET name = COALESCE($1, name), password = COALESCE($2, password) WHERE userid = $3 RETURNING *",
+      [name, password, userid]
     );
 
     if (result.rows.length === 0) {
@@ -95,10 +78,10 @@ export const updateUser = async (req, res) => {
 
 // Delete a user
 export const deleteUser = async (req, res) => {
-  const { id } = req.params;
+  const { userid } = req.params;
 
   try {
-    const result = await pool.query("DELETE FROM users WHERE id = $1 RETURNING *", [id]);
+    const result = await pool.query("DELETE FROM users WHERE userid = $1 RETURNING *", [userid]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, message: "User not found" });
