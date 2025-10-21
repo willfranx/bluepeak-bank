@@ -23,6 +23,28 @@ Observed: 200 returns user 1 without ownership check
 Risk: High (IDOR)
 Fix: ensureAuthenticated + ensureOwnerOr
 
+# Base URL (choose one depending on your environment)
+> NOTE: Replace `**<BASE>**` in the commands below with whichever URL applies to you.
+### Commands used (examples)
+# List users (check DB-backed response)
+curl -i <BASE>/api/users
+
+# Create test user
+curl -i -X POST <BASE>/api/users \
+  -H "Content-Type: application/json" \
+  -d '{"name":"alice","password":"Password123!"}'
+
+# Get user by id (IDOR check)
+curl -i <BASE>/api/users/1
+
+# Simple SQLi attempt (should be blocked by parameterized queries)
+curl -i "<BASE>/api/users/1' OR '1'='1"
+
+# XSS test (inserting a script as a name to see if reflected)
+curl -i -X POST <BASE>/api/users \
+  -H "Content-Type: application/json" \
+  -d '{"name":"<script>alert(1)</script>","password":"PwD!23"}'
+
 ## Summary
 Basic functionality verified using curl. Routes respond successfully, confirming backend–DB connectivity.  
 Several high-risk findings identified:
