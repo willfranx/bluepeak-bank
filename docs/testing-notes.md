@@ -27,7 +27,7 @@ Fix: ensureAuthenticated + ensureOwnerOr
 > NOTE: Replace `**<BASE>**` in the commands below with whichever URL applies to you.
 ### Commands used (examples)
 # List users (check DB-backed response)
-curl -i <BASE>/api/users
+curl -i `**<BASE>**`/api/users
 
 # Create test user
 curl -i -X POST `**<BASE>**`/api/users \
