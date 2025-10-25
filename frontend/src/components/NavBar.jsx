@@ -4,7 +4,7 @@ import logo from "../assets/logo.svg";
 
 export default function NavBar({ user, onLogout }) {
   return (
-    <nav className="bg-white border-b dark:bg-sky-600">
+    <nav className="border-b bg-sky-600">
       <div className="max-w-screen-xl mx-auto px-4 py-3 flex items-center">
         <img
           className="rounded-full h-8 w-auto mr-4"
@@ -13,7 +13,7 @@ export default function NavBar({ user, onLogout }) {
         />
 
         <Link to="/" className="flex items-center space-x-3">
-          <span className="text-lg font-semibold text-gray-900 dark:text-white hover:text-blue-700">
+          <span className="text-lg font-semibold text-white hover:text-blue-700">
             BluePeak Bank
           </span>
         </Link>
@@ -77,7 +77,7 @@ export default function NavBar({ user, onLogout }) {
         <div className="flex items-center gap-3 text-neutral-50">
           {user ? (
             <>
-              <span className="text-neutral-50 dark:text-gray-200">
+              <span className="text-gray-200">
                 Hi, {user.username}
               </span>
               <button

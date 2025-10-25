@@ -28,19 +28,19 @@ export default function Transfer({ accounts = [], onTransfer }) {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-white py-8">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 max-w-md w-full">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+      <div className="bg-gray-800 rounded-lg shadow-lg p-6 max-w-md w-full">
+        <h2 className="text-xl font-semibold text-white mb-4">
           Transfer Funds
         </h2>
         <form onSubmit={send} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+            <label className="block text-sm font-medium text-gray-200 mb-1">
               From
             </label>
             <select
               value={fromId}
               onChange={(e) => setFromId(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+              className="w-full px-3 py-2 border border-gray-700 rounded-md bg-gray-900 text-gray-100"
             >
               {accounts.map((a) => (
                 <option key={a.id} value={a.id}>
@@ -51,13 +51,13 @@ export default function Transfer({ accounts = [], onTransfer }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+            <label className="block text-sm font-medium text-gray-200 mb-1">
               To
             </label>
             <select
               value={toId}
               onChange={(e) => setToId(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+              className="w-full px-3 py-2 border border-gray-700 rounded-md bbg-gray-900 text-gray-100"
             >
               {accounts.map((a) => (
                 <option key={a.id} value={a.id}>
@@ -68,13 +68,13 @@ export default function Transfer({ accounts = [], onTransfer }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+            <label className="block text-sm font-medium text-gray-200 mb-1">
               Amount
             </label>
             <input
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+              className="w-full px-3 py-2 border border-gray-700 rounded-md bg-gray-900 text-gray-100"
             />
           </div>
 
@@ -88,7 +88,7 @@ export default function Transfer({ accounts = [], onTransfer }) {
           </div>
         </form>
         {message && (
-          <p className="mt-4 text-sm text-gray-600 dark:text-gray-300">
+          <p className="mt-4 text-sm text-gray-300">
             {message}
           </p>
         )}
