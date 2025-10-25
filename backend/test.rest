@@ -9,8 +9,8 @@ POST http://localhost:8000/api/users
 Content-Type: application/json
 
 {
-  "name": "Hodor",
-  "password": "hodor"
+  "name": "user16",
+  "password": "book123"
 }
 
 ###
@@ -81,7 +81,7 @@ POST http://localhost:8000/api/accounts
 Content-Type: application/json
 
 {
-  "userid": 1,
+  "userid": 12,
   "type": "saving",
   "balance": 1000
 }
