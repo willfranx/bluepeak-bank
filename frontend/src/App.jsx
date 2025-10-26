@@ -1,22 +1,22 @@
-import React, { useState } from 'react';
-import './App.css';
+import React, { useState } from "react";
+import "./App.css";
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   Navigate,
-} from 'react-router-dom';
-import Login from './pages/Login';
-import Accounts from './pages/Accounts';
-import Transfer from './pages/Transfer';
-import NavBar from './components/NavBar';
+} from "react-router-dom";
+import Login from "./pages/Login";
+import Accounts from "./pages/Accounts";
+import Transfer from "./pages/Transfer";
+import NavBar from "./components/NavBar";
 
 function App() {
   // Basic in-memory auth and accounts state for demo purposes
   const [user, setUser] = useState(null);
   const [accounts, setAccounts] = useState([
-    { id: 'chk-1', name: 'Checking', balance: 1250.5 },
-    { id: 'sav-1', name: 'Savings', balance: 8400.0 },
+    { id: "chk-1", name: "Checking", balance: 1250.5 },
+    { id: "sav-1", name: "Savings", balance: 8400.0 },
   ]);
 
   const login = (username) => {
@@ -50,19 +50,43 @@ function App() {
           <Routes>
             <Route
               path="/"
-              element={user ? <Navigate to="/accounts" replace /> : <Login onLogin={login} />}
+              element={
+                user ? (
+                  <Navigate to="/accounts" replace />
+                ) : (
+                  <Login onLogin={login} />
+                )
+              }
             />
             <Route
               path="/login"
-              element={user ? <Navigate to="/accounts" replace /> : <Login onLogin={login} />}
+              element={
+                user ? (
+                  <Navigate to="/accounts" replace />
+                ) : (
+                  <Login onLogin={login} />
+                )
+              }
             />
             <Route
               path="/accounts"
-              element={user ? <Accounts accounts={accounts} /> : <Navigate to="/login" replace />}
+              element={
+                user ? (
+                  <Accounts accounts={accounts} />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
             />
             <Route
               path="/transfer"
-              element={user ? <Transfer accounts={accounts} onTransfer={transfer} /> : <Navigate to="/login" replace />}
+              element={
+                user ? (
+                  <Transfer accounts={accounts} onTransfer={transfer} />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
             />
           </Routes>
         </div>
