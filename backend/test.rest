@@ -5,26 +5,46 @@ Accept: application/json
 ### ================= USERS =================
 
 ### Add a new user
-POST http://localhost:8000/api/users
+POST http://localhost:8000/api/auth/register
 Content-Type: application/json
 
 {
-  "name": "Hodor",
-  "password": "hodor"
+  "name": "ahmed",
+  "email": "ahmed@me.com",
+  "password": "book123"
 }
 
 ###
 
 ### Add another user
-POST http://localhost:8000/api/users
+POST http://localhost:8000/api/auth/register
 Content-Type: application/json
 
 {
-  "name": "Obiwan",
+  "name": "Obi",
+  "email": "Obiwan@me.com",
   "password": "hellothere1"
 }
 
 ###
+
+### Login user
+POST http://localhost:8000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "ahmed@me.com",
+  "password": "book123"
+}
+
+###
+
+### Get my profile
+GET http://localhost:8000/api/auth/profile
+Accept: application/json
+
+###
+
 
 ### Get all users
 GET http://localhost:8000/api/users
@@ -81,7 +101,7 @@ POST http://localhost:8000/api/accounts
 Content-Type: application/json
 
 {
-  "userid": 1,
+  "userid": 12,
   "type": "saving",
   "balance": 1000
 }
@@ -121,3 +141,25 @@ Content-Type: application/json
 DELETE http://localhost:8000/api/accounts/1
 Accept: application/json
 
+### Register insecure user (stores plaintext)
+POST http://localhost:8000/api/auth/insecure/register
+Content-Type: application/json
+
+{
+  "name": "lab_insecure",
+  "email": "insecure@example.test",
+  "password": "insecurePass123"
+}
+
+
+###
+
+### Login insecure (POST body) — returns token in body and sets insecure cookie
+POST http://localhost:8000/api/auth/insecure/login
+Content-Type: application/json
+
+{
+  "email": "insecure@example.test",
+  "password": "insecurePass123"
+}
+###
