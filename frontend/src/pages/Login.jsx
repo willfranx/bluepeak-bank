@@ -68,7 +68,6 @@ export default function Login({ onLogin }) {
               className="w-full px-3 py-2 border border-gray-300 bg-white rounded-md bg-white text-gray-900"
             />
           </div>
-          {error && <div className="text-sm text-red-600">{error}</div>}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Password
@@ -81,6 +80,7 @@ export default function Login({ onLogin }) {
               className="w-full px-3 py-2 border border-gray-300 bg-white rounded-md bg-white text-gray-900"
             />
           </div>
+          {error && <div className="text-sm text-red-600">{error}</div>}
           <div>
             <button
               className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
