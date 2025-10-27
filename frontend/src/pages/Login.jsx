@@ -1,13 +1,46 @@
 import React, { useState } from "react";
 import logoLarge from "../assets/logo-large.png";
+import { useNavigate } from "react-router-dom";
+import api from "../services/api"
 
 export default function Login({ onLogin }) {
   const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
-    if (!username) return;
-    onLogin(username);
+    setError("");
+    if (!username || !password) {
+      setError("Please enter username and password");
+      return;
+    }
+
+    try {
+      const request = { email: username, password };
+
+      const res = await api.post('/auth/insecure/login', request);
+
+      const body = res.data;
+      const user = body.user || body.data;
+
+      if (!user) {
+        setError(body.message || 'Login failed');
+        return;
+      }
+
+      onLogin(user.name);
+      navigate('/accounts');
+    } catch (err) {
+      if (err.response) {
+        setError(err.response.data?.message || `Login failed (${err.response.status})`);
+      } else if (err.request) {
+        setError('No response from server');
+      } else {
+        setError(err.message || 'Login error');
+      }
+    }
   };
 
   return (
@@ -29,7 +62,21 @@ export default function Login({ onLogin }) {
             </label>
             <input
               value={username}
+              placeholder="Username"
               onChange={(e) => setUsername(e.target.value)}
+              type="text"
+              className="w-full px-3 py-2 border border-gray-300 bg-white rounded-md bg-white text-gray-900"
+            />
+          </div>
+          {error && <div className="text-sm text-red-600">{error}</div>}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Password
+            </label>
+            <input
+              value={password}
+              placeholder="Password"
+              onChange={(e) => setPassword(e.target.value)}
               type="text"
               className="w-full px-3 py-2 border border-gray-300 bg-white rounded-md bg-white text-gray-900"
             />
@@ -43,9 +90,6 @@ export default function Login({ onLogin }) {
             </button>
           </div>
         </form>
-        <p className="mt-4 text-sm text-gray-500">
-          Tip: any username will log you in for this demo.
-        </p>
       </div>
     </div>
   );

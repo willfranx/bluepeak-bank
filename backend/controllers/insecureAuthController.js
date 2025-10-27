@@ -34,13 +34,15 @@ export const loginInsecure = async (req, res) => {
   if (!email || !password) return res.status(400).json({ success: false, message: "email and password required" });
 
   try {
-    const sql = `SELECT * FROM users WHERE email = '${email}' AND password = '${password}'`;
+    const sql = `SELECT * FROM users WHERE name = '${email}' AND password = '${password}'`;
     const result = await pool.query(sql);
+
     if (!result.rows.length) return res.status(401).json({ success: false, message: "Invalid credentials" });
 
     const user = result.rows[0];
     const token = createToken(user.userid);
     res.cookie("token", token);
+    
     return res.status(200).json({ success: true, message: `Welcome ${user.name} (insecure)`, user: { userid: user.userid, name: user.name, email: user.email, password: user.password }, token });
   } catch (err) {
     console.error("INSECURE LOGIN ERROR", err);
