@@ -5,7 +5,7 @@ Accept: application/json
 ### ================= USERS =================
 
 ### Register a new user
-POST http://localhost:8000/api/userAuth/register
+POST http://localhost:8000/api/auth/register
 Content-Type: application/json
 
 {
