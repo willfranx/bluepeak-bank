@@ -1,6 +1,6 @@
 import express from "express";
-import { register, login, profile, logout } from "../controllers/authController.js";
-import { protect } from "../middleware/authMiddleware.js";
+import { register, login, profile, logout } from "../controllers/userAuthController.js";
+import { protect } from "../middleware/authProtectMiddleware.js";
 
 import {
   registerInsecure,

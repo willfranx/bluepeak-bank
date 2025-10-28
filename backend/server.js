@@ -2,9 +2,10 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv"
 import cors from "cors"
-import userRoutes from "./routes/userRoutes.js";
-import accountRoutes from "./routes/acccountRoutes.js"
-import authRoutes from "./routes/authRoutes.js"
+import bankAccountRoutes from "./routes/bankAccountRoutes.js"
+import userAuthRoutes from "./routes/userAuthRoutes.js"
+import transactionRoutes from "./routes/transactionRoutes.js"
+
 
 dotenv.config()
 
@@ -23,14 +24,15 @@ app.get("/", (req, res) => {
   res.send("Welcome to the Web Security App API!");
 });
 
-// Mount user routes at /users
-app.use("/api/users", userRoutes);
 
 // Mount account routes at /accounts
-app.use("/api/accounts", accountRoutes);
+app.use("/api/accounts", bankAccountRoutes);
 
 // Mount authentication routes at /auth
-app.use("/api/auth", authRoutes);
+app.use("/api/auth", userAuthRoutes);
+
+// Mount transaction routes at /transaction
+app.use("/api/transactions", transactionRoutes)
 
 
 app.listen(port, () => {
