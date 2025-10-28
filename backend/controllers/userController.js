@@ -24,7 +24,9 @@ export const addUser = async (req, res) => {
 // Get all users
 export const getUsers = async (req, res) => {
   try {
-    const result = await pool.query("SELECT * FROM users");
+    // const result = await pool.query("SELECT * FROM users");
+    // replace insecure version with new version.
+    const result = await pool.query("SELECT userid, name, email, created_at FROM users");
     res.status(200).json({ success: true, data: result.rows });
   } catch (error) {
     console.error("Error fetching users:", error);
