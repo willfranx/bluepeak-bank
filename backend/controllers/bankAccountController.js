@@ -15,6 +15,11 @@ export const createAccount = async (req, res) => {
     });
   }
 
+  // Make sue the logged-in user matches the request userid
+  if (req.user.userid !== Number(userid)) {
+    return res.status(403).json({ success: false, message: "Forbidden.Cannot create accounts for another user" });
+  }
+
   try {
     // Check if user exists
     const userExists = await pool.query("SELECT 1 FROM users WHERE userid = $1 LIMIT 1", [userid]);
@@ -42,6 +47,11 @@ export const createAccount = async (req, res) => {
 // Get all accounts for a specific user
 export const getUserAccounts = async (req, res) => {
   const { userid } = req.params;
+
+  // Prevent accessing another user's account
+  if (req.user.userid !== Number(userid)) {
+        return res.status(403).json({ success: false, message: "Forbidden. Cannot view other users' accounts" });
+  }
 
   try {
     const result = await pool.query(
