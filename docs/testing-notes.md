@@ -56,3 +56,10 @@ Several high-risk findings identified:
 - Add **bcrypt** password hashing in `userController.js`  
 - Implement authentication middleware for sensitive routes  
 - Continue testing for SQLi, XSS, and CSRF vulnerabilities  
+
+
+### Update, things done on Oct 27, 2025  
+**Fix:** Removed password field from `/api/users` responses ( used to expose hashed passwords).  
+**Why:** prevent data exposure in API outputs.  
+**Tested:** Verified locally in  Docker Compose. I Confirmed that API still works correctly and returns safe fields only like userid, name,email, and created_at.  
+**Status:** Deployed a branch `fix/remove-password-response` and PR #12 opened for review.
