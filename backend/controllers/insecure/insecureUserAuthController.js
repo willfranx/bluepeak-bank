@@ -12,7 +12,7 @@ export const registerInsecure = async (req, res) => {
     const insertSql = `INSERT INTO users (name, email, password) VALUES ('${name}', '${email}', '${password}') RETURNING userid, name, email, password`;
     const inserted = await pool.query(insertSql);
   const user = inserted.rows[0];
-  // intentionally insecure: do NOT create or set any auth token/cookie here
+  // intentionally insecure: does not create or set any auth token/cookie here
   return res.status(201).json({ success: true, message: "User created insecurely", user });
   } catch (err) {
     console.error("INSECURE REGISTER ERROR", err);
