@@ -30,6 +30,7 @@ services:
       DB_PASSWORD: password123
       DB_NAME: db123
       NODE_ENV: development
+      JWT_SECRET: development
     volumes:
       - ./backend:/app
       - /app/node_modules
