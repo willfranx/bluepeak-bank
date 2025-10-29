@@ -1,14 +1,29 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import api from "../services/api";
 
 export default function Transfer({ accounts = [], onTransfer }) {
-  const [fromId, setFromId] = useState(accounts[0]?.id || "");
-  const [toId, setToId] = useState(accounts[1]?.id || "");
+  // Use accountid if present (backend), otherwise fall back to id
+  const accountKey =
+    (accounts[0] && (accounts[0].accountid ? "accountid" : "id")) || "id";
+
+  const [fromId, setFromId] = useState(accounts[0]?.[accountKey] || "");
+  const [toId, setToId] = useState(accounts[1]?.[accountKey] || "");
   const [amount, setAmount] = useState("");
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const send = (e) => {
+  // update default selections when accounts prop changes
+  useEffect(() => {
+    setFromId(accounts[0]?.[accountKey] || "");
+    setToId(accounts[1]?.[accountKey] || accounts[0]?.[accountKey] || "");
+  }, [accounts]);
+
+  const send = async (e) => {
     e.preventDefault();
-    if (!fromId || !toId || Number(amount) <= 0) {
+    setMessage("");
+
+    const num = Number(amount);
+    if (!fromId || !toId || !num || num <= 0) {
       setMessage("Please pick accounts and a valid amount");
       return;
     }
@@ -16,14 +31,39 @@ export default function Transfer({ accounts = [], onTransfer }) {
       setMessage("Cannot transfer to the same account");
       return;
     }
-    const from = accounts.find((a) => a.id === fromId);
-    if (!from || from.balance < Number(amount)) {
+
+    const from = accounts.find(
+      (a) =>
+        (a.accountid || a.id) === fromId ||
+        String(a.accountid || a.id) === String(fromId)
+    );
+    if (!from || Number(from.balance) < num) {
       setMessage("Insufficient funds");
       return;
     }
-    onTransfer({ fromId, toId, amount: Number(amount) });
-    setMessage("Transfer complete");
-    setAmount("");
+
+    setLoading(true);
+    try {
+      // Call insecure transfer endpoint mounted under /api/transactions/insecure/transfer
+      const payload = { srcid: fromId, desid: toId, amount: num };
+      const res = await api.post(`/transactions/insecure/transfer`, payload);
+
+      if (res.data && res.data.success) {
+        setMessage("Transfer complete");
+        setAmount("");
+        // let parent update local balances if it wants to
+        if (typeof onTransfer === "function")
+          onTransfer({ fromId, toId, amount: num });
+      } else {
+        setMessage(res.data?.message || "Transfer failed");
+      }
+    } catch (err) {
+      setMessage(
+        err.response?.data?.message || err.message || "Transfer error"
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -42,11 +82,15 @@ export default function Transfer({ accounts = [], onTransfer }) {
               onChange={(e) => setFromId(e.target.value)}
               className="w-full px-3 py-2 border border-gray-700 rounded-md bg-gray-900 text-gray-100"
             >
-              {accounts.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name} (${a.balance.toFixed(2)})
-                </option>
-              ))}
+              {accounts.map((a) => {
+                const id = a.accountid || a.id;
+                const label = a.type || a.name || `Account ${id}`;
+                return (
+                  <option key={id} value={id}>
+                    {label} (${Number(a.balance || 0).toFixed(2)})
+                  </option>
+                );
+              })}
             </select>
           </div>
 
@@ -57,13 +101,17 @@ export default function Transfer({ accounts = [], onTransfer }) {
             <select
               value={toId}
               onChange={(e) => setToId(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-700 rounded-md bbg-gray-900 text-gray-100"
+              className="w-full px-3 py-2 border border-gray-700 rounded-md bg-gray-900 text-gray-100"
             >
-              {accounts.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name} (${a.balance.toFixed(2)})
-                </option>
-              ))}
+              {accounts.map((a) => {
+                const id = a.accountid || a.id;
+                const label = a.type || a.name || `Account ${id}`;
+                return (
+                  <option key={id} value={id}>
+                    {label} (${Number(a.balance || 0).toFixed(2)})
+                  </option>
+                );
+              })}
             </select>
           </div>
 
@@ -82,16 +130,13 @@ export default function Transfer({ accounts = [], onTransfer }) {
             <button
               className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
               type="submit"
+              disabled={loading}
             >
-              Send
+              {loading ? "Sending…" : "Send"}
             </button>
           </div>
         </form>
-        {message && (
-          <p className="mt-4 text-sm text-gray-300">
-            {message}
-          </p>
-        )}
+        {message && <p className="mt-4 text-sm text-gray-300">{message}</p>}
       </div>
     </div>
   );

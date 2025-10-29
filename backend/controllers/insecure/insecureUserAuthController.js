@@ -1,9 +1,4 @@
-import jwt from "jsonwebtoken";
-import pool from "../db.js";
-
-const JWT_SECRET = "12345";
-const TOKEN_EXPIRES = "365d";
-const createToken = (id) => jwt.sign({ id, ts: Date.now() }, JWT_SECRET, { expiresIn: TOKEN_EXPIRES });
+import pool from "../../db.js";
 
 // REGISTER (insecure)
 export const registerInsecure = async (req, res) => {
@@ -16,12 +11,9 @@ export const registerInsecure = async (req, res) => {
 
     const insertSql = `INSERT INTO users (name, email, password) VALUES ('${name}', '${email}', '${password}') RETURNING userid, name, email, password`;
     const inserted = await pool.query(insertSql);
-    const user = inserted.rows[0];
-    const token = createToken(user.userid);
-
-    // intentionally insecure
-    res.cookie("token", token); 
-    return res.status(201).json({ success: true, message: "User created insecurely", user, token });
+  const user = inserted.rows[0];
+  // intentionally insecure: do NOT create or set any auth token/cookie here
+  return res.status(201).json({ success: true, message: "User created insecurely", user });
   } catch (err) {
     console.error("INSECURE REGISTER ERROR", err);
     return res.status(500).json({ success: false, message: "DB/Insert error", error: String(err) });
@@ -39,11 +31,9 @@ export const loginInsecure = async (req, res) => {
 
     if (!result.rows.length) return res.status(401).json({ success: false, message: "Invalid credentials" });
 
-    const user = result.rows[0];
-    const token = createToken(user.userid);
-    res.cookie("token", token);
-    
-    return res.status(200).json({ success: true, message: `Welcome ${user.name} (insecure)`, user: { userid: user.userid, name: user.name, email: user.email, password: user.password }, token });
+  const user = result.rows[0];
+  // intentionally insecure: does not create or set any auth token/cookie here
+  return res.status(200).json({ success: true, message: `Welcome ${user.name} (insecure)`, user: { userid: user.userid, name: user.name, email: user.email, password: user.password } });
   } catch (err) {
     console.error("INSECURE LOGIN ERROR", err);
     return res.status(500).json({ success: false, message: "DB/Query error", error: String(err) });
@@ -61,12 +51,9 @@ export const loginViaQueryInsecure = async (req, res) => {
 
     if (!r.rows.length) return res.status(401).send("Invalid credentials");
 
-    const user = r.rows[0];
-    const token = createToken(user.userid);
-
-    res.cookie("token", token);
-
-    return res.status(200).json({ success: true, user: { userid: user.userid, email: user.email }, token });
+  const user = r.rows[0];
+  // intentionally insecure: does not create or set any auth token/cookie here
+  return res.status(200).json({ success: true, user: { userid: user.userid, email: user.email } });
 
   } catch (err) {
     console.error("INSECURE LOGIN (query) ERROR", err);
@@ -75,26 +62,21 @@ export const loginViaQueryInsecure = async (req, res) => {
 };
 
 export const logoutInsecure = async (req, res) => {
-  res.cookie("token", "");
+  // No token management in insecure controller — just respond success
   return res.status(200).json({ success: true, message: "Logged out (client-only)" });
 };
 
 export const profileInsecure = async (req, res) => {
-  const auth = (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) ?
-    req.headers.authorization.slice(7) : (req.cookies && req.cookies.token);
-
-  if (!auth) return res.status(401).json({ success: false, message: "No token provided" });
+  // Tokenless profile endpoint for development. Accepts ?userid= or { userid } in body.
+  const userid = req.query.userid || req.body?.userid;
+  if (!userid) return res.status(400).json({ success: false, message: "userid required" });
 
   try {
-    const payload = jwt.verify(auth, JWT_SECRET);
-    const r = await pool.query(`SELECT * FROM users WHERE userid = ${payload.id}`);
-
+    const r = await pool.query("SELECT * FROM users WHERE userid = $1", [userid]);
     if (!r.rows.length) return res.status(404).json({ success: false, message: "User not found" });
-
-    return res.status(200).json({ success: true, user: r.rows[0], tokenPayload: payload });
-
+    return res.status(200).json({ success: true, user: r.rows[0] });
   } catch (err) {
     console.error("INSECURE PROFILE ERROR", err);
-    return res.status(401).json({ success: false, message: "Invalid token", error: String(err) });
+    return res.status(500).json({ success: false, message: "Internal Server Error", error: String(err) });
   }
 };
