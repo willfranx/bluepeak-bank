@@ -30,11 +30,11 @@ export const registerInsecure = async (req, res) => {
 
 // LOGIN (insecure, POST)
 export const loginInsecure = async (req, res) => {
-  const { email, password } = req.body || {};
-  if (!email || !password) return res.status(400).json({ success: false, message: "email and password required" });
+  const { username, password } = req.body || {};
+  if (!username || !password) return res.status(400).json({ success: false, message: "email and password required" });
 
   try {
-    const sql = `SELECT * FROM users WHERE name = '${email}' AND password = '${password}'`;
+    const sql = `SELECT * FROM users WHERE (email = '${username}' OR name = '${username}') AND password = '${password}'`;
     const result = await pool.query(sql);
 
     if (!result.rows.length) return res.status(401).json({ success: false, message: "Invalid credentials" });

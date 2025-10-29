@@ -78,7 +78,7 @@ export default function NavBar({ user, onLogout }) {
           {user ? (
             <>
               <span className="text-gray-200">
-                Hi, {user.username}
+                Hi, {user.name || "there"}
               </span>
               <button
                 onClick={onLogout}

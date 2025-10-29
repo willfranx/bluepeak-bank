@@ -19,8 +19,8 @@ function App() {
     { id: "sav-1", name: "Savings", balance: 8400.0 },
   ]);
 
-  const login = (username) => {
-    setUser({ username });
+  const login = (user) => {
+    setUser(user);
   };
 
   const logout = () => {

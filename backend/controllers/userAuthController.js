@@ -64,7 +64,7 @@ export const login = async (req, res) => {
     try {
 
         const findUser = await pool.query(
-        "SELECT * FROM users WHERE email = $1", [email]);
+        "SELECT * FROM users WHERE email = $1 OR name = $1", [email]);
 
         if (findUser.rows.length === 0) {
             return res.status(400).json({ success: false, message: "Invalid credentials" });
