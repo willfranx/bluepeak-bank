@@ -7,7 +7,7 @@ services:
     ports:
       - "5173:5173"
     environment:
-      REACT_APP_API_URL: http://api:8000
+      VITE_API_URL: http://localhost:8000
       CHOKIDAR_USEPOLLING: "true"   
     volumes:
       - ./frontend:/app             
@@ -30,6 +30,7 @@ services:
       DB_PASSWORD: password123
       DB_NAME: db123
       NODE_ENV: development
+      JWT_SECRET: development
     volumes:
       - ./backend:/app
       - /app/node_modules

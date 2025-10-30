@@ -4,7 +4,7 @@ Accept: application/json
 
 ### ================= USERS =================
 
-### Register a new user
+### Register a new user (should fail as password does not meet the password policy)
 POST http://localhost:8000/api/auth/register
 Content-Type: application/json
 
@@ -16,6 +16,18 @@ Content-Type: application/json
 
 ###
 
+### Register a new user
+POST http://localhost:8000/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "ahmed",
+  "email": "ahmed@me.com",
+  "password": "Book123Worm%%"
+}
+
+###
+
 ### Register another user
 POST http://localhost:8000/api/auth/register
 Content-Type: application/json
@@ -23,7 +35,7 @@ Content-Type: application/json
 {
   "name": "Obi1",
   "email": "Obiwan1@me.com",
-  "password": "hellothere1"
+  "password": "helloThere1*"
 }
 
 ###
@@ -34,15 +46,53 @@ Content-Type: application/json
 
 {
   "email": "ahmed@me.com",
-  "password": "book123"
+  "password": "Book123Worm%%"
 }
 
 ###
+
 
 ### Get my profile
 GET http://localhost:8000/api/auth/profile
 Accept: application/json
 Cookie: token=<JWT_TOKEN>
+
+###
+
+### Logout user
+POST http://localhost:8000/api/auth/logout
+Content-Type: application/json
+
+###
+
+
+### ================ test lockout ================
+### run this five times (wrong pass)
+POST http://localhost:8000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "Obiwan1@me.com",
+  "password": "password"
+}
+
+###
+
+### Logout user
+POST http://localhost:8000/api/auth/logout
+Content-Type: application/json
+
+###
+
+
+### try and login (should fail) try again after 1 minute should work
+POST http://localhost:8000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "Obiwan1@me.com",
+  "password": "helloThere1*"
+}
 
 ###
 
