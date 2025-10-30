@@ -8,7 +8,7 @@ import {
   loginViaQueryInsecure,
   logoutInsecure,
   profileInsecure
-} from "../controllers/insecureAuthController.js";
+} from "../controllers/insecure/insecureUserAuthController.js";
 
 
 const router = express.Router();
@@ -18,7 +18,6 @@ router.post("/register", register);
 router.post("/login", login);
 router.post("/logout", logout);
 router.get("/profile", protect, profile);
-
 
 //Auth routes (insecure)
 router.post("/insecure/register", registerInsecure);

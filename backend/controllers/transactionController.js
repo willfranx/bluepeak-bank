@@ -112,7 +112,7 @@ export const transfer = async (req, res) => {
 };
 
 // Get transactions for an account
-export const transaction = async (req, res) => {
+export const getTransactions = async (req, res) => {
     
     const { accountid } = req.params;
 
