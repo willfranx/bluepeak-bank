@@ -14,13 +14,5 @@ const pool = new Pool({
   database: process.env.DB_NAME,
 });
 
-pool.on("connect", () => {
-  console.log("Connected to Bluepeak database")
-}) 
-
-pool.on("error", (error) => {
-  console.log("Error connecting to the database", error)
-})
-
 // Make the pools available to other modules in the app.
 export default pool;
