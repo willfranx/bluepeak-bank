@@ -9,15 +9,13 @@ export const createAccount = async (req, res) => {
   }
 
   if (type !== "checking" && type !== "saving") {
-    return res.status(400).json({
-      success: false,
-      message: "Account type must be 'checking' or 'saving'",
+    return res.status(400).json({success: false, message: "Account type must be 'checking' or 'saving'",
     });
   }
 
   // Make sue the logged-in user matches the request userid
   if (req.user.userid !== Number(userid)) {
-    return res.status(403).json({ success: false, message: "Forbidden.Cannot create accounts for another user" });
+    return res.status(403).json({ success: false, message: "Forbidden. Cannot create accounts for another user" });
   }
 
   try {
@@ -98,11 +96,10 @@ export const deleteAccount = async (req, res) => {
       return res.status(404).json({ success: false, message: "Account not found" });
     }
 
-    res.status(200).json({
-      success: true,
-      data: result.rows[0],
+    res.status(200).json({ success: true, data: result.rows[0],
       message: "Account deleted successfully",
     });
+    
   } catch (error) {
     console.error("Error deleting account:", error);
     res.status(500).json({ success: false, message: "Internal Server Error" });

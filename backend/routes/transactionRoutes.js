@@ -5,11 +5,9 @@ import {deposit, withdraw, transfer, transaction } from "../controllers/transact
 const router = express.Router();
 
 // Protect these routes
-router.use(protect)
-
-router.post("/deposit", deposit)
-router.post("/withdraw", withdraw)
-router.post("/transfer", transfer)
-router.get("/:accountid", transaction)
+router.post("/deposit", protect, deposit)
+router.post("/withdraw", protect, withdraw)
+router.post("/transfer", protect, transfer)
+router.get("/:accountid", protect, transaction)
 
 export default router
