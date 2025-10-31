@@ -6,12 +6,14 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-import Login from "./pages/Login";
-import SignUp from "./pages/SignUp";
+
 import Accounts from "./pages/Accounts";
-import Transfer from "./pages/Transfer";
-import Transactions from "./pages/Transactions";
+import Login from "./pages/Login";
 import Profile from "./pages/Profile";
+import SignUp from "./pages/SignUp";
+import Transactions from "./pages/Transactions";
+import Transfer from "./pages/Transfer";
+
 import NavBar from "./components/NavBar";
 import api from "./services/api";
 

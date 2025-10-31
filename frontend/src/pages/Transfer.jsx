@@ -81,8 +81,8 @@ export default function Transfer({ accounts = [], onTransfer }) {
               className="w-full px-3 py-2 border border-gray-700 rounded-md bg-gray-900 text-gray-100"
             >
               {accounts.map((a) => {
-                const id = a.accountid || a.id;
-                const label = a.type || a.name || `Account ${id}`;
+                const id = a.accountid;
+                const label = a.type || `Account ${id}`;
                 return (
                   <option key={id} value={id}>
                     {label} (${Number(a.balance || 0).toFixed(2)})
@@ -102,8 +102,8 @@ export default function Transfer({ accounts = [], onTransfer }) {
               className="w-full px-3 py-2 border border-gray-700 rounded-md bg-gray-900 text-gray-100"
             >
               {accounts.map((a) => {
-                const id = a.accountid || a.id;
-                const label = a.type || a.name || `Account ${id}`;
+                const id = a.accountid;
+                const label = a.type || `Account ${id}`;
                 return (
                   <option key={id} value={id}>
                     {label} (${Number(a.balance || 0).toFixed(2)})
