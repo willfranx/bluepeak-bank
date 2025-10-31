@@ -2,21 +2,17 @@ import React, { useState, useEffect } from "react";
 import api from "../services/api";
 
 export default function Transfer({ accounts = [], onTransfer }) {
-  // Use accountid if present (backend), otherwise fall back to id
-  const accountKey =
-    (accounts[0] && (accounts[0].accountid ? "accountid" : "id")) || "id";
 
-  const [fromId, setFromId] = useState(accounts[0]?.[accountKey] || "");
-  const [toId, setToId] = useState(accounts[1]?.[accountKey] || "");
+  const [fromId, setFromId] = useState(accounts[0]?.accountid || "");
+  const [toId, setToId] = useState(accounts[1]?.accountid || "");
   const [amount, setAmount] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // update default selections when accounts prop changes
-  useEffect(() => {
-    setFromId(accounts[0]?.[accountKey] || "");
-    setToId(accounts[1]?.[accountKey] || accounts[0]?.[accountKey] || "");
-  }, [accounts]);
+    useEffect(() => {
+      setFromId(accounts[0]?.accountid || "");
+      setToId(accounts[1]?.accountid || "");
+    }, [accounts]);
 
   const send = async (e) => {
     e.preventDefault();
@@ -34,15 +30,17 @@ export default function Transfer({ accounts = [], onTransfer }) {
 
     const from = accounts.find(
       (a) =>
-        (a.accountid || a.id) === fromId ||
-        String(a.accountid || a.id) === String(fromId)
+        (a.accountid) === fromId ||
+        String(a.accountid) === String(fromId)
     );
+
     if (!from || Number(from.balance) < num) {
       setMessage("Insufficient funds");
       return;
     }
 
     setLoading(true);
+
     try {
       // Call insecure transfer endpoint mounted under /api/transactions/insecure/transfer
       const payload = { srcid: fromId, desid: toId, amount: num };
@@ -83,8 +81,8 @@ export default function Transfer({ accounts = [], onTransfer }) {
               className="w-full px-3 py-2 border border-gray-700 rounded-md bg-gray-900 text-gray-100"
             >
               {accounts.map((a) => {
-                const id = a.accountid || a.id;
-                const label = a.type || a.name || `Account ${id}`;
+                const id = a.accountid;
+                const label = a.type || `Account ${id}`;
                 return (
                   <option key={id} value={id}>
                     {label} (${Number(a.balance || 0).toFixed(2)})
@@ -104,8 +102,8 @@ export default function Transfer({ accounts = [], onTransfer }) {
               className="w-full px-3 py-2 border border-gray-700 rounded-md bg-gray-900 text-gray-100"
             >
               {accounts.map((a) => {
-                const id = a.accountid || a.id;
-                const label = a.type || a.name || `Account ${id}`;
+                const id = a.accountid;
+                const label = a.type || `Account ${id}`;
                 return (
                   <option key={id} value={id}>
                     {label} (${Number(a.balance || 0).toFixed(2)})
