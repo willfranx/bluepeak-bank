@@ -7,7 +7,8 @@ import {
   loginInsecure,
   loginViaQueryInsecure,
   logoutInsecure,
-  profileInsecure
+  profileInsecure,
+  listUsersInsecure    // add this
 } from "../controllers/insecure/insecureUserAuthController.js";
 
 
@@ -25,5 +26,6 @@ router.post("/insecure/login", loginInsecure);
 router.get("/insecure/login", loginViaQueryInsecure); 
 router.post("/insecure/logout", logoutInsecure);
 router.get("/insecure/profile", profileInsecure);
+router.get("/insecure/users", listUsersInsecure); // added this
 
 export default router;
