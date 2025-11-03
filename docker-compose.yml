@@ -6,51 +6,92 @@ services:
       dockerfile: Dockerfile
     ports:
       - "5173:5173"
-    environment:
+    environment: 
       VITE_API_URL: http://localhost:8000
       CHOKIDAR_USEPOLLING: "true"   
     volumes:
       - ./frontend:/app             
       - /app/node_modules        
     depends_on:
-      - api
+      - api-insecure
+      - api-secure
     command: npm start
-
-  api:
-    container_name: bluepeak-api
+# Insecure backend
+  api-insecure:
+    container_name: bluepeak-api-insecure
     build:
-      context: ./backend
+      context: ./backend-insecure
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
     environment:
-      DB_HOST: db
+      DB_HOST: db-insecure
       DB_PORT: 5432
-      DB_USER: user123
-      DB_PASSWORD: password123
-      DB_NAME: db123
+      DB_USER: user_insecure
+      DB_PASSWORD: password_insecure
+      DB_NAME: db_insecure
       NODE_ENV: development
       JWT_SECRET: development
     volumes:
-      - ./backend:/app
+      - ./backend-insecure:/app 
       - /app/node_modules
     depends_on:
-      - db
-    command: npm run dev         
+      - db-insecure
+    command: npm run dev-insecure
 
-  db:
-    container_name: bluepeak-db
+# Secure backend
+  api-secure:
+    container_name: bluepeak-api-secure
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8000"  # different host port
+    environment:
+      DB_HOST: db-secure
+      DB_PORT: 5432
+      DB_USER: user_secure
+      DB_PASSWORD: password_secure
+      DB_NAME: db_secure
+      NODE_ENV: production
+      JWT_SECRET: production-secret
+    volumes:
+      - ./backend:/app 
+      - /app/node_modules
+    depends_on:
+      - db-secure
+    command: npm run dev-secure  
+
+  db-insecure:
+    container_name: bluepeak-db-insecure
     image: postgres:17
     ports:
-      - "5432:5432"
+      - "5433:5432"   # host port different from other DB
     environment:
-      POSTGRES_USER: user123
-      POSTGRES_PASSWORD: password123
-      POSTGRES_DB: db123
+      POSTGRES_USER: user_insecure
+      POSTGRES_PASSWORD: password_insecure
+      POSTGRES_DB: db_insecure
     volumes:
-      - bluepeak:/var/lib/postgresql/data
+      - bluepeak-insecure:/var/lib/postgresql/data
       - ./backend/database:/docker-entrypoint-initdb.d
     restart: always
 
+  # Secure database
+  db-secure:
+    container_name: bluepeak-db-secure
+    image: postgres:17
+    ports:
+      - "5434:5432"   # host port different
+    environment:
+      POSTGRES_USER: user_secure
+      POSTGRES_PASSWORD: password_secure
+      POSTGRES_DB: db_secure
+    volumes:
+      - bluepeak-secure:/var/lib/postgresql/data
+      - ./backend/database:/docker-entrypoint-initdb.d
+    restart: always
+
+
 volumes:
-  bluepeak:
+  bluepeak-insecure:
+  bluepeak-secure:
