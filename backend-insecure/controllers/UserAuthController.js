@@ -1,4 +1,4 @@
-import pool from "../../db.js";
+import pool from "../db.js";
 
 // REGISTER (insecure)
 export const registerInsecure = async (req, res) => {

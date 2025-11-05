@@ -1,11 +1,11 @@
 ### Check server root
-GET http://localhost:8001
+GET http://localhost:8000
 Accept: application/json
 
 ### ================= USERS =================
 
 ### Register a new user (should fail as password does not meet the password policy)
-POST http://localhost:8001/api/auth/register
+POST http://localhost:8000/api/auth/register
 Content-Type: application/json
 
 {
@@ -17,7 +17,7 @@ Content-Type: application/json
 ###
 
 ### Register a new user
-POST http://localhost:8001/api/auth/register
+POST http://localhost:8000/api/auth/register
 Content-Type: application/json
 
 {
@@ -29,7 +29,7 @@ Content-Type: application/json
 ###
 
 ### Register another user
-POST http://localhost:8001/api/auth/register
+POST http://localhost:8000/api/auth/register
 Content-Type: application/json
 
 {
@@ -41,7 +41,7 @@ Content-Type: application/json
 ###
 
 ### Login user
-POST http://localhost:8001/api/auth/login
+POST http://localhost:8000/api/auth/login
 Content-Type: application/json
 
 {
@@ -53,14 +53,14 @@ Content-Type: application/json
 
 
 ### Get my profile
-GET http://localhost:8001/api/auth/profile
+GET http://localhost:8000/api/auth/profile
 Accept: application/json
 Cookie: token=<JWT_TOKEN>
 
 ###
 
 ### Logout user
-POST http://localhost:8001/api/auth/logout
+POST http://localhost:8000/api/auth/logout
 Content-Type: application/json
 
 ###
@@ -68,7 +68,7 @@ Content-Type: application/json
 
 ### ================ test lockout ================
 ### run this five times (wrong pass)
-POST http://localhost:8001/api/auth/login
+POST http://localhost:8000/api/auth/login
 Content-Type: application/json
 
 {
@@ -79,14 +79,14 @@ Content-Type: application/json
 ###
 
 ### Logout user
-POST http://localhost:8001/api/auth/logout
+POST http://localhost:8000/api/auth/logout
 Content-Type: application/json
 
 ###
 
 
 ### try and login (should fail) try again after 1 minute should work
-POST http://localhost:8001/api/auth/login
+POST http://localhost:8000/api/auth/login
 Content-Type: application/json
 
 {
@@ -99,7 +99,7 @@ Content-Type: application/json
 ### ================= BANK ACCOUNTS =================
 
 ### Create a new checking account for a user
-POST http://localhost:8001/api/accounts
+POST http://localhost:8000/api/accounts
 Content-Type: application/json
 Cookie: token=<JWT_TOKEN>
 
@@ -112,7 +112,7 @@ Cookie: token=<JWT_TOKEN>
 ###
 
 ### Create a new saving account for a user
-POST http://localhost:8001/api/accounts
+POST http://localhost:8000/api/accounts
 Content-Type: application/json
 Cookie: token=<JWT_TOKEN>
 
@@ -125,14 +125,14 @@ Cookie: token=<JWT_TOKEN>
 ###
 
 ### Get all accounts for user 1
-GET http://localhost:8001/api/accounts/1
+GET http://localhost:8000/api/accounts/1
 Accept: application/json
 Cookie: token=<JWT_TOKEN>
 
 ###
 
 ### Test case: Missing type or userid should fail
-POST http://localhost:8001/api/accounts
+POST http://localhost:8000/api/accounts
 Content-Type: application/json
 Cookie: token=<JWT_TOKEN>
 
@@ -143,7 +143,7 @@ Cookie: token=<JWT_TOKEN>
 ###
 
 ### Test case: Invalid account type should fail
-POST http://localhost:8001/api/accounts
+POST http://localhost:8000/api/accounts
 Content-Type: application/json
 Cookie: token=<JWT_TOKEN>
 
@@ -156,7 +156,7 @@ Cookie: token=<JWT_TOKEN>
 ###
 
 ### Test case: Attempt to delete account with transactions should fail
-DELETE http://localhost:8001/api/accounts/1
+DELETE http://localhost:8000/api/accounts/1
 Accept: application/json
 
 ###
@@ -164,7 +164,7 @@ Accept: application/json
 ### ================= INSECURE USERS =================
 
 ### Register insecure user (for testing only)
-POST http://localhost:8001/api/auth/insecure/register
+POST http://localhost:8000/api/auth/insecure/register
 Content-Type: application/json
 
 {
@@ -176,7 +176,7 @@ Content-Type: application/json
 ###
 
 ### Login insecure user (for testing only)
-POST http://localhost:8001/api/auth/insecure/login
+POST http://localhost:8000/api/auth/insecure/login
 Content-Type: application/json
 
 {
@@ -189,7 +189,7 @@ Content-Type: application/json
 ### ================= TRANSACTIONS AND TRANSFERS =================
 
 ### Transfer money between accounts
-POST http://localhost:8001/api/transactions
+POST http://localhost:8000/api/transactions
 Content-Type: application/json
 Cookie: token=<JWT_TOKEN>
 
@@ -202,21 +202,21 @@ Cookie: token=<JWT_TOKEN>
 ###
 
 ### Get all transactions
-GET http://localhost:8001/api/transactions
+GET http://localhost:8000/api/transactions
 Accept: application/json
 Cookie: token=<JWT_TOKEN>
 
 ###
 
 ### Get specific transaction by ID
-GET http://localhost:8001/api/transactions/1
+GET http://localhost:8000/api/transactions/1
 Accept: application/json
 Cookie: token=<JWT_TOKEN>
 
 ###
 
 ### Deposit money into an account
-POST http://localhost:8001/api/accounts/deposit
+POST http://localhost:8000/api/accounts/deposit
 Content-Type: application/json
 Cookie: token=<JWT_TOKEN>
 
@@ -228,7 +228,7 @@ Cookie: token=<JWT_TOKEN>
 ###
 
 ### Withdraw money from an account
-POST http://localhost:8001/api/accounts/withdraw
+POST http://localhost:8000/api/accounts/withdraw
 Content-Type: application/json
 Cookie: token=<JWT_TOKEN>
 
@@ -240,14 +240,14 @@ Cookie: token=<JWT_TOKEN>
 ###
 
 ### Get transactions for a specific account
-GET http://localhost:8001/api/transactions/1
+GET http://localhost:8000/api/transactions/1
 Accept: application/json
 Cookie: token=<JWT_TOKEN>
 
 ###
 
 ### Test deposit negative amount (should fail)
-POST http://localhost:8001/api/accounts/deposit
+POST http://localhost:8000/api/accounts/deposit
 Content-Type: application/json
 Cookie: token=<JWT_TOKEN>
 
@@ -259,7 +259,7 @@ Cookie: token=<JWT_TOKEN>
 ###
 
 ### Test withdraw more than balance (should fail)
-POST http://localhost:8001/api/accounts/withdraw
+POST http://localhost:8000/api/accounts/withdraw
 Content-Type: application/json
 Cookie: token=<JWT_TOKEN>
 
@@ -271,7 +271,7 @@ Cookie: token=<JWT_TOKEN>
 ###
 
 ### Transfer money to self (should fail)
-POST http://localhost:8001/api/transactions
+POST http://localhost:8000/api/transactions
 Content-Type: application/json
 Cookie: token=<JWT_TOKEN>
 

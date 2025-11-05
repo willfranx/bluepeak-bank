@@ -1,4 +1,4 @@
-import pool from "../../db.js";
+import pool from "../db.js";
 
 // Represents the bank/system account
 const SYSTEM_ACCOUNT_ID = 0;

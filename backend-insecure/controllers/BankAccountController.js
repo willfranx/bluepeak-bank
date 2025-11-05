@@ -1,4 +1,4 @@
-import pool from "../../db.js";
+import pool from "../db.js";
 
 // Create a new account for an existing user (no auth required)
 export const createAccountInsecure = async (req, res) => {
