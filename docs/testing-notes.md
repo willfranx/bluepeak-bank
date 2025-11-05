@@ -97,11 +97,11 @@ Findings:
 
 Next, We'll take a look at some curls and their effects on insecure and secure versions of our endpoints, We'll talk about the expected and actual behavior along with the impact.
 
-NOTE: in this instance '**<BASE>**' == http://localhost:8000, but this may change depending on how you run the database
+NOTE: in this instance `**<BASE>**` == http://localhost:8000, but this may change depending on how you run the database
 ## SQL Injection (Auth Bypass)
 
 **Insecure (vulnerable)**  
-curl -i -X POST "'**<BASE>**'/api/auth/insecure/login" \
+curl -i -X POST "`**<BASE>**`/api/auth/insecure/login" \
   -H "Content-Type: application/json" \
   --data-raw '{"username":"x'\'' OR '\''1'\''='\''1'--","password":"whatever"}'
 
