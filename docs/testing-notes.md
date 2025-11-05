@@ -97,7 +97,7 @@ Findings:
 
 Next, We'll take a look at some curls and their effects on insecure and secure versions of our endpoints, We'll talk about the expected and actual behavior along with the impact.
 
-NOTE: in this instance `**<BASE>**` == http://localhost:8000, but this may change depending on how you run the database
+NOTE: in this instance `**<BASE>**` == http://localhost:8000, but this may change depending on how you run the app
 ## SQL Injection (Auth Bypass)
 
 **Insecure (vulnerable)**  
