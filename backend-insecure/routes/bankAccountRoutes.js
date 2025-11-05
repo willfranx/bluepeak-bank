@@ -1,5 +1,8 @@
 import express from "express";
-import { createAccountInsecure, getUserAccountsInsecure, deleteAccountInsecure   } from "../controllers/bankAccountController.js";
+import {    createAccountInsecure,
+  getUserAccountsInsecure,
+  deleteAccountInsecure,
+ } from "../controllers/bankAccountController.js";
 
 const router = express.Router();
 

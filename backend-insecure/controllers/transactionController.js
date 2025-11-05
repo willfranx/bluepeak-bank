@@ -133,5 +133,3 @@ export const getTransactionsInsecure = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
-
-export default { depositInsecure, withdrawInsecure, transferInsecure, getTransactionsInsecure };

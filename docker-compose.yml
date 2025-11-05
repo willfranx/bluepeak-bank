@@ -73,7 +73,7 @@ services:
       POSTGRES_DB: db_insecure
     volumes:
       - bluepeak-insecure:/var/lib/postgresql/data
-      - ./backend/database:/docker-entrypoint-initdb.d
+      - ./backend-insecure/database:/docker-entrypoint-initdb.d
     restart: always
 
   # Secure database
