@@ -68,23 +68,23 @@ Several high-risk findings identified:
 
 I ran local curl tests to show how our insecure controllers behave compared to the secure ones. The goal was to reproduce five common web vulnerabilities so Far:
 
-1. SQL Injection (SQLi)
+**1. SQL Injection (SQLi)**
 Definition: Attackers stick SQL code into user inputs so the app runs unintended database queries.
 Why it’s harmful for banking: An attacker can read or change account balances, steal user data, or create fake transactions. Basically escalated privileges for threat actors, and for a bank app that’s basically handing over funds and user records to Threat Actors.
 
-2. Insecure Direct Object Reference (IDOR)
+**2. Insecure Direct Object Reference (IDOR)**
 Definition: The app lets clients request objects (like /accounts/123) without checking if the caller actually owns them.
 Why it’s harmful for banking: Anyone can view or modify other people’s accounts, transfers, or statements just by guessing IDs. Essentially you change the number in the URL and see someone else’s account, and for a banking app that means anyone could enumerate accounts, check balances, move money or see private transaction history which is a huge privacy and fraud risk.
 
-3. Password Exposure / Data Leak
+**3. Password Exposure / Data Leak**
 Definition: The app returns or stores passwords (or other secrets) in plaintext or otherwise exposes sensitive fields.
 Why it’s harmful for banking: On a bank site that’s hamful because people reuse passwords, attackers can break into real accounts, clean out funds or do identity theft. Also leaked personal data can destroys user trust and can lead to big legal troubles for the financial insitutions that oversee the funds.
 
-4. Stored Cross-Site Scripting (XSS)
+**4. Stored Cross-Site Scripting (XSS)**
 Definition: The app saves attacker-controlled HTML/JS (like <script>) and later serves it to other users unescaped.
 Why it’s harmful for banking: Malicious scripts can steal session cookies, perform actions as users, or show fake UIs to trick users into giving credentials or approvals.
 
-5. Cross-Site Request Forgery (CSRF)
+**5. Cross-Site Request Forgery (CSRF)**
 Definition: A logged-in user’s browser is tricked into sending a state-changing request (like transfer money) from an attacker-controlled page.
 Why it’s harmful for banking: If the site trusts cookies and the user views a page, the malicious script runs in their browser. Then an attacker can make a unknowing victim transfer funds, change settings, or authorize payments. For a bank site, that could mean stealing session tokens, auto-initiate transfers, or show fake UI to trick people into giving up 2FA codes, which is a nightmare for everyone involved.
 
@@ -100,17 +100,17 @@ Next, We'll take a look at some curls and their effects on insecure and secure v
 ## SQL Injection (Auth Bypass)
 
 **Insecure (vulnerable)**  
-curl -i -X POST "[http://localhost:8000/api/auth/insecure/login](http://localhost:8000/api/auth/insecure/login)" 
--H "Content-Type: application/json" 
---data-raw '{"username":"x''' OR '''1'''='''1'--","password":"whatever"}'
+curl -i -X POST "http://localhost:8000/api/auth/insecure/login" \
+  -H "Content-Type: application/json" \
+  --data-raw '{"username":"x'\'' OR '\''1'\''='\''1'--","password":"whatever"}'
 
 **Expected (insecure):** 200 OK + user object returned (auth bypass)  
 **Actual (insecure):** 200 OK, logged in as the first user `ahmed@example.com` even with invalid credentials. This proves the query was concatenated and injectable.
 
 **Secure version**  
-curl -i -X POST "[http://localhost:8000/api/auth/login](http://localhost:8000/api/auth/login)" 
--H "Content-Type: application/json" 
--d '{"email":"x''' OR '''1'''='''1","password":"whatever"}'
+curl -i -X POST "http://localhost:8000/api/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"x'\'' OR '\''1'\''='\''1","password":"whatever"}'
 
 **Expected (secure):** 400 or 401 Invalid credentials, no injection, no bypass.  
 **Root cause:** User input is mixed straight into the SQL query instead of using parameters.
@@ -118,25 +118,25 @@ curl -i -X POST "[http://localhost:8000/api/auth/login](http://localhost:8000/ap
 ## IDOR (account exposures)
 
 **Insecure (no auth)**  
-curl -i "[http://localhost:8000/api/accounts/insecure/1](http://localhost:8000/api/accounts/insecure/1)"
+curl -i "http://localhost:8000/api/accounts/insecure/1"
 
 **Expected (insecure):** 200 OK with full account data for user 1  
 **Actual:** as expected, account data returned with no auth or ownership check
 
 **Secure (token required)**  
-curl -i "[http://localhost:8000/api/accounts/1](http://localhost:8000/api/accounts/1)"
+curl -i "http://localhost:8000/api/accounts/1"
 
 **Actual:** 401 Unauthorized, access blocked because no valid token was provided
 
 ## Password exposure (insecure listing)
 
 **Insecure**  
-curl -s "[http://localhost:8000/api/auth/insecure/users](http://localhost:8000/api/auth/insecure/users)" | jq .
+curl -s "http://localhost:8000/api/auth/insecure/users" | jq .
 
 **Result:** returns user records including password or hash. Some are bcrypt hashes from seed data, others are plaintext from insecure registration.
 
 **Secure listing**  
-curl -s "[http://localhost:8000/api/users](http://localhost:8000/api/users)" | jq .
+curl -s "http://localhost:8000/api/users" | jq .
 
 **Result:** returns only `{ userid, name, email, created }`. No password or hash field is exposed.
 
@@ -145,19 +145,19 @@ curl -s "[http://localhost:8000/api/users](http://localhost:8000/api/users)" | j
 ## Stored XSS (user name field)
 
 **Insecure registration**  
-curl -i -X POST "[http://localhost:8000/api/auth/insecure/register](http://localhost:8000/api/auth/insecure/register)" 
--H "Content-Type: application/json" 
--d '{"name":"<script>alert(1)</script>","email":"[xss@test.local](mailto:xss@test.local)","password":"Password123!"}'
+curl -i -X POST "http://localhost:8000/api/auth/insecure/register" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"<script>alert(1)</script>","email":"xss@test.local","password":"Password123!"}'
 
 Then:  
-curl -s "[http://localhost:8000/api/auth/insecure/users](http://localhost:8000/api/auth/insecure/users)" | jq .
+curl -s "http://localhost:8000/api/auth/insecure/users" | jq .
 
 **Result:** the stored name contains `<script>alert(1)</script>` raw. If rendered on a frontend, it executes.
 
 **Secure registration**  
-curl -i -X POST "[http://localhost:8000/api/auth/register](http://localhost:8000/api/auth/register)" 
--H "Content-Type: application/json" 
--d '{"name":"<script>alert(1)</script>","email":"[xss2@test.local](mailto:xss2@test.local)","password":"Password123!"}'
+curl -i -X POST "http://localhost:8000/api/auth/register" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"<script>alert(1)</script>","email":"xss2@test.local","password":"Password123!"}'
 
 **Result:** input is rejected or sanitized, no raw script is returned
 
@@ -173,6 +173,7 @@ curl -i -X POST "[http://localhost:8000/api/auth/register](http://localhost:8000
 
 **Expected (insecure):** if the victim is logged in, the deposit will succeed automatically.  
 **Secure version:** requiring a CSRF token or Authorization header causes the submission to fail with 403.
+
 
 ---
 
