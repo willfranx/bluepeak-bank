@@ -226,7 +226,7 @@ C) Task: Collaborate with Keegan to verify secure DB integration
 Quick run plan  
 - Separate Secure and Insecure setup: One for showing the hacks and the other is a clean version that shows mitigation.  
 - Run the curl on insecure, then switch to secure, run it again, take screenshots.  
-- Add short test files under `tests/` so CI can check it later.
+- Add short test files under `tests/` so CI (Continuous Integration: automated system that runs tests on new code changes) can check it later.
 
 
 
