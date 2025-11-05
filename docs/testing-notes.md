@@ -166,11 +166,11 @@ curl -i -X POST "`**<BASE>**`/api/auth/register" \
 
 **Insecure PoC (attacker page)**
 
-<form method="POST" action="`**<BASE>**`/api/transactions/deposit">
+`<form method="POST" action="`**<BASE>**`/api/transactions/deposit">
   <input type="hidden" name="accountid" value="3" />
   <input type="hidden" name="amount" value="1000" />
   <input type="submit" value="Pay" />
-</form>
+</form>`
 
 **Expected (insecure):** if the victim is logged in, the deposit will succeed automatically.  
 **Secure version:** requiring a CSRF token or Authorization header causes the submission to fail with 403.
