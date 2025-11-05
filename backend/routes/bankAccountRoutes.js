@@ -4,10 +4,9 @@ import { protect } from "../middleware/authProtectMiddleware.js"
 
 const router = express.Router();
 
-// Acoount routes
-router.post("/", protect, createAccount);
+// Account routes
+router.post("/", createAccount);
 router.get("/:userid", protect, getUserAccounts);
 router.delete("/:accountid", protect, deleteAccount);
-
 
 export default router;

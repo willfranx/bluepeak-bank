@@ -4,14 +4,13 @@ import {deposit, withdraw, transfer, getTransactions } from "../controllers/tran
 
 const router = express.Router();
 
-// // Protect these routes
-// router.use(protect)
+// Protect these routes
+router.use(protect)
 
-router.post("/deposit", protect, deposit)
-router.post("/withdraw", protect, withdraw)
-router.post("/transfer", protect, transfer)
-router.get("/:accountid", protect, getTransactions)
-
-
+// Transaction routes
+router.post("/deposit", deposit)
+router.post("/withdraw", withdraw)
+router.post("/transfer", transfer)
+router.get("/:accountid", getTransactions)
 
 export default router

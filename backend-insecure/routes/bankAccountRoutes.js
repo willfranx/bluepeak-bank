@@ -3,7 +3,6 @@ import { createAccountInsecure, getUserAccountsInsecure, deleteAccountInsecure  
 
 const router = express.Router();
 
-
 // Account routes (insecure)
 router.post("/insecure/", createAccountInsecure);
 router.get("/insecure/:userid", getUserAccountsInsecure);
