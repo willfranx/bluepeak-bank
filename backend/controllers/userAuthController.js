@@ -162,7 +162,7 @@ const isUserLocked = async (userid, islocked, lockoutend) => {
     }
 };
 
-//Record user events
+//Record user events: returns True on success and False on failure
 const logUserEvent = async (userid, event) => {
     try {
     // Get the eventid 
@@ -183,8 +183,12 @@ const logUserEvent = async (userid, event) => {
       "INSERT INTO userevents(userid, eventid) VALUES ($1, $2)",
       [userid, eventid]
     );
+
+    return true;
+
   } catch (error) {
     console.error(`logUserEvent: logging event "${event}" for user ${userid}:`, error);
+    return false;
   }
 };
 
@@ -304,8 +308,26 @@ export const login = async (req, res) => {
 
 // Logout the user 
 export const logout = async (req, res) => {
-    res.cookie("token", "", { ...cookieOptions, maxAge: 0 });
-    res.status(200).json({ success: true, message: "User is logged out" });
+    // Log the logout
+    try {
+      // userid is set by protect
+      const userid = req.user?.userid;
+
+      // log the logout
+      if (userid) {
+        await logUserEvent(userid, "Log Out");
+      } else {
+        console.warn("Logout: could not identify user from web token")
+      }
+      
+      // Clear the cookie and return success
+      res.cookie("token", "", { ...cookieOptions, maxAge: 0 });
+      res.status(200).json({ success: true, message: "User is logged out" });
+
+    } catch (error) {
+      console.error("Logout error:", error);
+      return res.status(500).json({ success: false, message: "Logout: error during logout" });
+    }
 };
 
 

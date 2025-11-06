@@ -78,14 +78,8 @@ Content-Type: application/json
 
 ###
 
-### Logout user
-POST http://localhost:8000/api/auth/logout
-Content-Type: application/json
 
-###
-
-
-### try and login (should fail) try again after 1 minute should work
+### try and login with the correct creds. (should fail) try again after 1 minute should work
 POST http://localhost:8000/api/auth/login
 Content-Type: application/json
 
@@ -95,6 +89,13 @@ Content-Type: application/json
 }
 
 ###
+
+### Logout user
+POST http://localhost:8000/api/auth/logout
+Content-Type: application/json
+
+###
+
 
 ### ================= BANK ACCOUNTS =================
 
