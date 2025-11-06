@@ -40,27 +40,28 @@ services:
     command: npm run dev-insecure
 
 # Secure backend
+  # Secure backend
   api-secure:
     container_name: bluepeak-api-secure
     build:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "8001:8000"  # different host port
+      - "8001:8000"  # container port 8000 exposed on host 8001
     environment:
       DB_HOST: db-secure
       DB_PORT: 5432
       DB_USER: user_secure
       DB_PASSWORD: password_secure
       DB_NAME: db_secure
-      NODE_ENV: production
+      NODE_ENV: development        # use development for nodemon/hot reload
       JWT_SECRET: production-secret
     volumes:
-      - ./backend:/app 
-      - /app/node_modules
+      - ./backend:/app              # bind mount host code
+      - backend-node-modules:/app/node_modules  # preserve container node_modules
     depends_on:
       - db-secure
-    command: npm run dev-secure  
+    command: npm run dev-secure
 
   db-insecure:
     container_name: bluepeak-db-insecure
@@ -95,3 +96,5 @@ services:
 volumes:
   bluepeak-insecure:
   bluepeak-secure:
+  backend-node-modules:
+

@@ -2,6 +2,8 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv"
 import cors from "cors"
+import helmet from "helmet"
+import morgan from "morgan";
 import bankAccountRoutes from "./routes/bankAccountRoutes.js"
 import userAuthRoutes from "./routes/userAuthRoutes.js"
 import transactionRoutes from "./routes/transactionRoutes.js"
@@ -12,10 +14,14 @@ dotenv.config()
 const app = express();
 const port = process.env.PORT || 8000;
 
+app.use(helmet())
+
 app.use(cors({
   origin: process.env.REACT_CLIENT_URL || "http://localhost:5173",
   credentials: true,
 }))
+
+app.use(morgan("dev"));
 
 app.use(express.json());
 app.use(cookieParser())
