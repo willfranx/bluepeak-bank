@@ -32,7 +32,7 @@ const passwordRequirementsMet = (password) => {
   );
 };
 
-//Returns true if a user exists
+// Check if the user already exists and return true if exists
 const userCheck = async (email) => {
     try {
         const checkEmail = await pool.query( "SELECT * FROM users where email =$1", [email] );
@@ -196,10 +196,6 @@ const logUserEvent = async (userid, event) => {
 export const register = async (req, res) => {
     const { name, email, password} = req.body;
 
-    if (!name || !email || !password) {
-        return res.status(400).json({ success: false, message: "Name, email, and password are required" });
-    }
-
     try {
     
         // Check if the user exists in the database       
@@ -248,10 +244,6 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
 
     const { email, password} = req.body
-
-    if (!email || !password) {
-        return res.status(400).json({ success: false, message: "Email and Password are required" });
-    }
 
     try {
 

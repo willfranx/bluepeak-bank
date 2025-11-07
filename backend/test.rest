@@ -104,8 +104,8 @@ Content-Type: application/json
 Cookie: token=<JWT_TOKEN>
 
 {
-  "userid": 1,
-  "type": "checking",
+  "userId": 1,
+  "accountType": "checking",
   "balance": 500
 }
 
@@ -117,12 +117,37 @@ Content-Type: application/json
 Cookie: token=<JWT_TOKEN>
 
 {
-  "userid": 12,
-  "type": "saving",
+  "userId": 12,
+  "accountType": "saving",
   "balance": 1000
 }
 
 ###
+
+### Attempt to create account for another user (should fail: ownership check)
+POST http://localhost:8001/api/accounts
+Content-Type: application/json
+Cookie: token=<JWT_TOKEN>
+
+{
+  "userId": 12,
+  "accountType": "checking",
+  "balance": 100
+}
+
+###
+
+### Attempt to create account with invalid accountType (should fail: Zod validation)
+POST http://localhost:8001/api/accounts
+Content-Type: application/json
+Cookie: token=<JWT_TOKEN>
+
+{
+  "userId": 1,
+  "accountType": "money",
+  "balance": 100
+}
+
 
 ### Get all accounts for user 1
 GET http://localhost:8001/api/accounts/1
@@ -131,13 +156,14 @@ Cookie: token=<JWT_TOKEN>
 
 ###
 
-### Test case: Missing type or userid should fail
+### Test case: Missing accountType or userId should fail
 POST http://localhost:8001/api/accounts
 Content-Type: application/json
 Cookie: token=<JWT_TOKEN>
 
 {
-  "userid": 1
+  "userId": 1,
+  "balance": 100
 }
 
 ###
@@ -148,7 +174,7 @@ Content-Type: application/json
 Cookie: token=<JWT_TOKEN>
 
 {
-  "userid": 1,
+  "userId": 1,
   "type": "money",
   "balance": 500
 }
@@ -160,6 +186,18 @@ DELETE http://localhost:8001/api/accounts/1
 Accept: application/json
 
 ###
+
+### Attempt to delete an account that doesn’t exist (should fail)
+DELETE http://localhost:8001/api/accounts/999
+Accept: application/json
+Cookie: token=<JWT_TOKEN>
+
+###
+
+### Attempt to delete account owned by another user (should fail)
+DELETE http://localhost:8001/api/accounts/3
+Accept: application/json
+Cookie: token=<JWT_TOKEN>
 
 ### ================= INSECURE USERS =================
 

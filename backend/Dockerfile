@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 8000
 
 # Start the backend with nodemon for hot reload
-CMD ["npm", "run", "dev"]
+CMD ["npm", "run", "dev-secure"]
