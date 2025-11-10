@@ -12,15 +12,13 @@ import pool from "./db.js";
 dotenv.config()
 
 const app = express();
-const port = process.env.PORT || 8000;
-
-app.use(helmet())
+const port = process.env.PORT;
 
 app.use(cors({
   origin: process.env.REACT_CLIENT_URL || "http://localhost:5173",
   credentials: true,
 }))
-
+app.use(helmet())
 app.use(morgan("dev"));
 
 app.use(express.json());

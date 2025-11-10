@@ -1,7 +1,6 @@
 //db.js: Node.js DB config file for PostgreSQL.
 //Import PostgreSQL client
 import pg from "pg";
-import dotenv from "dotenv"
 
 const { Pool } = pg;
 

@@ -1,4 +1,5 @@
 services:
+  # Frontend Service
   web:
     container_name: bluepeak-web
     build:
@@ -6,83 +7,45 @@ services:
       dockerfile: Dockerfile
     ports:
       - "5173:5173"
-    environment: 
-      VITE_API_URL: http://localhost:8000
-      CHOKIDAR_USEPOLLING: "true"   
-    volumes:
-      - ./frontend:/app             
-      - /app/node_modules        
-    depends_on:
-      - api-insecure
-      - api-secure
-    command: npm start
-# Insecure backend
-  api-insecure:
-    container_name: bluepeak-api-insecure
-    build:
-      context: ./backend-insecure
-      dockerfile: Dockerfile
-    ports:
-      - "8000:8000"
     environment:
-      DB_HOST: db-insecure
-      DB_PORT: 5432
-      DB_USER: user_insecure
-      DB_PASSWORD: password_insecure
-      DB_NAME: db_insecure
-      NODE_ENV: development
-      JWT_SECRET: development
+      VITE_API_URL: http://localhost:8000
+      CHOKIDAR_USEPOLLING: "true"
     volumes:
-      - ./backend-insecure:/app 
+      - ./frontend:/app
       - /app/node_modules
     depends_on:
-      - db-insecure
-    command: npm run dev-insecure
+      - api-secure
+    command: npm start
 
-# Secure backend
-  # Secure backend
+  # Secure Backend Service
   api-secure:
     container_name: bluepeak-api-secure
     build:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "8001:8000"  # container port 8000 exposed on host 8001
+      - "8000:8000"  # expose container port 8000 on host 8000
     environment:
       DB_HOST: db-secure
       DB_PORT: 5432
       DB_USER: user_secure
       DB_PASSWORD: password_secure
       DB_NAME: db_secure
-      NODE_ENV: development        # use development for nodemon/hot reload
+      NODE_ENV: development  # use 'development' for hot reload
       JWT_SECRET: production-secret
     volumes:
-      - ./backend:/app              # bind mount host code
-      - backend-node-modules:/app/node_modules  # preserve container node_modules
+      - ./backend:/app
+      - backend-node-modules:/app/node_modules
     depends_on:
       - db-secure
     command: npm run dev-secure
 
-  db-insecure:
-    container_name: bluepeak-db-insecure
-    image: postgres:17
-    ports:
-      - "5433:5432"   # host port different from other DB
-    environment:
-      POSTGRES_USER: user_insecure
-      POSTGRES_PASSWORD: password_insecure
-      POSTGRES_DB: db_insecure
-    volumes:
-      - bluepeak-insecure:/var/lib/postgresql/data
-      - ./backend-insecure/database:/docker-entrypoint-initdb.d
-    restart: always
-
-  # Secure database
+  # Secure Database Service
   db-secure:
     container_name: bluepeak-db-secure
     image: postgres:17
     ports:
-      - "5434:5432"   # host port different
+      - "5434:5432"  # use different host port to avoid conflict
     environment:
       POSTGRES_USER: user_secure
       POSTGRES_PASSWORD: password_secure
@@ -92,9 +55,7 @@ services:
       - ./backend/database:/docker-entrypoint-initdb.d
     restart: always
 
-
+# Volumes
 volumes:
-  bluepeak-insecure:
   bluepeak-secure:
   backend-node-modules:
-
