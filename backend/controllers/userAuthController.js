@@ -15,23 +15,6 @@ const createToken = (id) => {
   });
 };
 
-// Tests a new password to see if meets the password policy. 
-// Returns True if password meets requirements
-const passwordRequirementsMet = (password) => {
-  const minLength = 12;
-  const hasUpper = /[A-Z]/.test(password);
-  const hasLower = /[a-z]/.test(password);
-  const hasNumber = /[0-9]/.test(password);
-  const hasSpecial = /[^A-Za-z0-9]/.test(password);
-  return ( 
-    password.length >= minLength &&
-    hasUpper &&
-    hasLower &&
-    hasNumber &&
-    hasSpecial
-  );
-};
-
 // Check if the user already exists and return true if exists
 const userCheck = async (email) => {
     try {
@@ -62,11 +45,11 @@ const isAuthSuspicious = async (userid) => {
     // pull recent events for the user, newest first
     const eventsResult = await pool.query(`
       SELECT e.event, ue.created
-      FROM userevents ue
-      JOIN events e ON ue.eventid = e.eventid
-      WHERE ue.userid = $1
-      ORDER BY ue.created DESC
-      LIMIT 10
+        FROM userevents ue
+        JOIN events e ON ue.eventid = e.eventid
+          WHERE ue.userid = $1
+          ORDER BY ue.created DESC
+          LIMIT 10
     `, [userid]);
 
     let failedCount = 0;
@@ -196,12 +179,6 @@ const logUserEvent = async (userid, event) => {
 export const register = async (req, res) => {
     const { name, email, password} = req.body;
 
-    // Check if the password meets the password policy
-    if (!passwordRequirementsMet(password)) {
-        return res.status(400).json({ success: false,
-            message: "Password must contain: 12 characters, 1 upper case, 1 lower case, 1 number, and 1 symbol." }); 
-    }
-    
     try {
     
         // Check if the user exists in the database       
