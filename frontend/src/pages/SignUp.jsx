@@ -31,10 +31,6 @@ export default function SignUp({ onLogin }) {
           return;
         }
 
-        // Create default checking and saving accounts for the new user (insecure endpoints)
-        // Use random starting balances (between $50 and $500) so accounts are usable for testing.
-        const randAmount = () => Number((Math.random() * (500 - 50) + 50).toFixed(2));
-
         // Notify parent (login) and pass any created accounts returned by the server
         const createdAccounts = body.accounts || [];
         if (typeof onLogin === "function") onLogin(user, createdAccounts);
