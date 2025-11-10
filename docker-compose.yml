@@ -13,31 +13,9 @@ services:
       - ./frontend:/app             
       - /app/node_modules        
     depends_on:
-      - api-insecure
       - api-secure
     command: npm start
-# Insecure backend
-  api-insecure:
-    container_name: bluepeak-api-insecure
-    build:
-      context: ./backend-insecure
-      dockerfile: Dockerfile
-    ports:
-      - "8000:8000"
-    environment:
-      DB_HOST: db-insecure
-      DB_PORT: 5432
-      DB_USER: user_insecure
-      DB_PASSWORD: password_insecure
-      DB_NAME: db_insecure
-      NODE_ENV: development
-      JWT_SECRET: development
-    volumes:
-      - ./backend-insecure:/app 
-      - /app/node_modules
-    depends_on:
-      - db-insecure
-    command: npm run dev-insecure
+
 
 # Secure backend
   # Secure backend
@@ -63,19 +41,6 @@ services:
       - db-secure
     command: npm run dev-secure
 
-  db-insecure:
-    container_name: bluepeak-db-insecure
-    image: postgres:17
-    ports:
-      - "5433:5432"   # host port different from other DB
-    environment:
-      POSTGRES_USER: user_insecure
-      POSTGRES_PASSWORD: password_insecure
-      POSTGRES_DB: db_insecure
-    volumes:
-      - bluepeak-insecure:/var/lib/postgresql/data
-      - ./backend-insecure/database:/docker-entrypoint-initdb.d
-    restart: always
 
   # Secure database
   db-secure:
@@ -94,7 +59,6 @@ services:
 
 
 volumes:
-  bluepeak-insecure:
   bluepeak-secure:
   backend-node-modules:
 

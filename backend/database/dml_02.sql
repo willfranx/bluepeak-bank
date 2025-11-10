@@ -36,13 +36,13 @@ INSERT INTO users (name, email, phonenumber) VALUES
 -- Passwords here are plain text for example purposes.
 -- In production, we always store hashed passwords.
 -- salt is not private info and unique to each entry
-INSERT INTO passwords (userid, salt, hash, algorithm, iscurrent)
+INSERT INTO passwords (userid, hash, iscurrent)
 VALUES
-(1, 'salt', '2b$12$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'argon2id', TRUE),
-(3, 'salt', '2b$12$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'argon2id', TRUE),
-(2, 'salt', '2b$12$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'argon2id', TRUE),
-(4, 'salt', '2b$12$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'argon2id', TRUE),
-(5, 'salt', '2b$12$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'argon2id', TRUE);
+(1, '2b$12$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', TRUE),
+(3, '2b$12$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', TRUE),
+(2, '2b$12$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', TRUE),
+(4, '2b$12$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', TRUE),
+(5, '2b$12$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', TRUE);
 
 -- ============================================
 -- ACCOUNTS SEED
