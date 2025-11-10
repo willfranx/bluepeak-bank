@@ -196,17 +196,17 @@ const logUserEvent = async (userid, event) => {
 export const register = async (req, res) => {
     const { name, email, password} = req.body;
 
+    // Check if the password meets the password policy
+    if (!passwordRequirementsMet(password)) {
+        return res.status(400).json({ success: false,
+            message: "Password must contain: 12 characters, 1 upper case, 1 lower case, 1 number, and 1 symbol." }); 
+    }
+    
     try {
     
         // Check if the user exists in the database       
         if ((await userCheck(email))) { 
             return res.status(400).json({ success: false, message: "This email is already linked to an account" }); 
-        }
-
-        // Check if the password meets the password policy
-        if (!passwordRequirementsMet(password)) {
-            return res.status(400).json({ success: false,
-                message: "Password must contain: 12 characters, 1 upper case, 1 lower case, 1 number, and 1 symbol." }); 
         }
 
         const hashedPassword = await bcrypt.hash(password, 12) // TODO: Replace with ARGON2id. bcrypt is for legacy 
