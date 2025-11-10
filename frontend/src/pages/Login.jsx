@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 
 export default function Login({ onLogin }) {
-  const [username, setUsername] = useState("");
+  const [email, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -12,14 +12,14 @@ export default function Login({ onLogin }) {
   const submit = async (e) => {
     e.preventDefault();
     setError("");
-    if (!username || !password) {
+    if (!email || !password) {
       setError("Please enter username and password");
       return;
     }
 
     try {
-      const payload = { username, password };
-      const res = await api.post("/auth/insecure/login", payload);
+      const payload = { email, password };
+      const res = await api.post("/auth/login", payload, { withCredentials: true });
       const body = res.data;
       const user = body.user || body.data;
 
@@ -63,7 +63,7 @@ export default function Login({ onLogin }) {
               Username
             </label>
             <input
-              value={username}
+              value={email}
               placeholder="Username"
               onChange={(e) => setUsername(e.target.value)}
               type="text"

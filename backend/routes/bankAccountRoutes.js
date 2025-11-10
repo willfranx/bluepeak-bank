@@ -8,7 +8,7 @@ const router = express.Router();
 
 // Account routes
 router.post("/", protect, validate({ body: createAccountSchema }), createAccount);
-router.get("/:userid", protect, validate({ params: userIdSchema }), getUserAccounts);
+router.get("/:userId", protect, validate({ params: userIdSchema }), getUserAccounts);
 router.delete("/:accountid", protect, validate({ params: accountIdSchema }), deleteAccount);
 
 export default router;

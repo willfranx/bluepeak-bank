@@ -22,7 +22,7 @@ export default function Profile({ user, onUserUpdate }) {
       setLoading(true);
       setError("");
       try {
-        const res = await api.get(`/auth/insecure/profile?userid=${user.userid}`);
+        const res = await api.get(`/auth/profile?userId=${user.userid}`);
         if (res.data && res.data.success) {
           const updated = res.data.user || res.data.data || null;
           setProfile(updated);
@@ -55,12 +55,12 @@ export default function Profile({ user, onUserUpdate }) {
     setError("");
     setSuccess("");
     try {
-      const payload = { userid: user.userid }; // always include userid
+      const payload = { userId: user.userid }; // always include userid
       if (name) payload.name = name;
       if (email) payload.email = email;
       if (password) payload.password = password;
 
-      const res = await api.put(`/auth/insecure/profile`, payload);
+      const res = await api.put(`/auth/profile`, payload);
       if (res.data && res.data.success) {
         const updated = res.data.user || profile;
         setProfile(updated);

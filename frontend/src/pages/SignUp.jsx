@@ -21,30 +21,25 @@ export default function SignUp({ onLogin }) {
     setLoading(true);
     try {
       const payload = { name, email, password };
-      const res = await api.post("/auth/insecure/register", payload);
+      const res = await api.post("/auth/register", payload);
       const body = res.data;
-      if (body && body.success && body.user) {
-        const user = body.user;
+      // backend returns the created user under `data` (secure controller) or `user` (insecure)
+      if (body && body.success) {
+        const user = body.user || body.data;
+        if (!user) {
+          setError("Registration succeeded but no user info returned");
+          return;
+        }
 
         // Create default checking and saving accounts for the new user (insecure endpoints)
         // Use random starting balances (between $50 and $500) so accounts are usable for testing.
         const randAmount = () => Number((Math.random() * (500 - 50) + 50).toFixed(2));
 
-        try {
-          await api.post("/accounts/insecure/", { userid: user.userid, type: "checking", balance: randAmount() });
-        } catch (acctErr) {
-          // Non-blocking: warn but continue
-          console.warn("Failed to create checking account for new user:", acctErr?.response?.data || acctErr);
-        }
+        // Notify parent (login) and pass any created accounts returned by the server
+        const createdAccounts = body.accounts || [];
+        if (typeof onLogin === "function") onLogin(user, createdAccounts);
 
-        try {
-          await api.post("/accounts/insecure/", { userid: user.userid, type: "saving", balance: randAmount() });
-        } catch (acctErr) {
-          console.warn("Failed to create saving account for new user:", acctErr?.response?.data || acctErr);
-        }
-
-        // Now notify parent (login) and navigate so App can fetch accounts
-        if (typeof onLogin === "function") onLogin(user);
+        // Navigate to accounts page
         navigate("/accounts");
       } else {
         setError(body?.message || "Registration failed");
