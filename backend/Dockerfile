@@ -1,5 +1,5 @@
 # Use official Node LTS image
-FROM node:22-bullseye-slim
+FROM node:22-alpine
 
 # Set working directory
 WORKDIR /app
@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 8000
 
 # Start the backend with nodemon for hot reload
-CMD ["npm", "run", "dev-secure"]
+CMD ["npm", "run", "dev"]
