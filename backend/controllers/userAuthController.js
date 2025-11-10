@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken"
-import bcrypt from "bcrypt"
+import { hash, verify } from "@node-rs/argon2"
 import pool from "../db.js";
 
 const cookieOptions = {
@@ -180,38 +180,55 @@ export const register = async (req, res) => {
     const { name, email, password} = req.body;
 
     try {
-    
         // Check if the user exists in the database       
         if ((await userCheck(email))) { 
             return res.status(400).json({ success: false, message: "This email is already linked to an account" }); 
         }
-
-        const hashedPassword = await bcrypt.hash(password, 12) // TODO: Replace with ARGON2id. bcrypt is for legacy 
+    } catch (error) {
+        console.error("Error checking if user exists:", error);
+        return res.status(500).json({ success: false, message: "Error checking user" });
+    }
+    
+    try {
+        /*  Hashes with the argon2id algorithm (type 2 is default)
+          - salts the password automatically
+          - version default
+          - outputLen default
+          - secret null
+        */
+        const passwordHash = await hash(password, {
+          memoryCost: 9216,
+          timeCost: 4,
+          parallelism: 1
+        });
+        
+        // insert to users and passwords are commited together. roll back if error.
+        await pool.query("BEGIN");
         
         // insert user into users table
         const newUser = await pool.query(
             "INSERT INTO users (name, email) VALUES ($1, $2) RETURNING userid, name, email",
             [name, email]
-        )
-
-        if (newUser.rows.length < 1) {
-            return res.status(400).json({ success: false, message: "failed to add to users table" });
-        }
-
-        // insert the password into the passwords table. set iscurrent and link with userid.
-        await pool.query(
-            `INSERT INTO passwords (userid, hash, iscurrent)
-             VALUES ($1, $2, TRUE)`,
-            [newUser.rows[0].userid, hashedPassword]
         );
 
+        // insert the password into the passwords table
+        const newPassword = await pool.query(
+            "INSERT INTO passwords (userid, hash) VALUES ($1, $2) RETURNING userid",
+            [newUser.rows[0].userid, passwordHash]
+        );
+
+        // commit to the users and passwords tables.
+        await pool.query("COMMIT");
+
+        // award token for successfull account registration
         const token = createToken(newUser.rows[0].userid); 
-        
         res.cookie("token", token, cookieOptions); 
-        
         res.status(201).json({ success: true, data: newUser.rows[0], message: "User added successfully!" });
 
     } catch (error) {
+        // rollback the user and password commits if there was an error
+        await pool.query("ROLLBACK");
+
         console.error("Error inserting user:", error);
         res.status(500).json({ success: false, message: "Error adding user" });
     }
@@ -228,34 +245,32 @@ export const login = async (req, res) => {
         "SELECT * FROM users WHERE email = $1 OR name = $1", [email]);
 
         if (findUser.rows.length === 0) {
-            return res.status(400).json({ success: false, message: "Invalid credentials" });
+            return res.status(401).json({ success: false, message: "Invalid credentials" });
         }
 
         const user = findUser.rows[0];
 
         // check if the user is locked out
         if (await isUserLocked(user.userid, user.islocked, user.lockoutend)){
-            return res.status(400).json({ success: false, message: "Account Is Locked" });
+            return res.status(403).json({ success: false, message: "Account Is Locked" });
         }
 
         // get the password
         const passwordResult = await pool.query(
-            "SELECT * FROM passwords WHERE userid = $1 AND iscurrent = true", [user.userid]
+            "SELECT hash FROM passwords WHERE userid = $1 AND iscurrent = true", [user.userid]
         );
 
         if (passwordResult.rows.length === 0) {
-            return res.status(400).json({ success: false, message: `Login Error: no current password found for userid ${user.userid}` });
+            return res.status(401).json({ success: false, message: `Login Error: no current password found for userid ${user.userid}` });
         }
 
-        const currentPassword = passwordResult.rows[0]
-
-        const isMatch = await bcrypt.compare(password, currentPassword.hash); // todo: need to replace with argo2id
+        const isMatch = await verify(passwordResult.rows[0].hash, password);
 
         if (!isMatch) {
             // log the failed login attempt
             await logUserEvent(user.userid, "Failed Authentication");
 
-            return res.status(400).json({ success: false, message: "Invalid credentials" });
+            return res.status(401).json({ success: false, message: "Invalid credentials" });
         }
 
         const token = createToken(user.userid)

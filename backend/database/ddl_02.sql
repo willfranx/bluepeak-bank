@@ -54,12 +54,7 @@ CREATE TABLE IF NOT EXISTS passwords (
     userid INTEGER NOT NULL
         REFERENCES users(userid)
         ON DELETE CASCADE,
-    salt BYTEA,
     hash TEXT NOT NULL,
-    algorithm VARCHAR(20) DEFAULT 'argon2id',
-    param1 VARCHAR(20),
-    param2 VARCHAR(20),
-    param3 VARCHAR(20),
     iscurrent BOOLEAN DEFAULT TRUE,
     created TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
