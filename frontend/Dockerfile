@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 5173
 
 # Start the React dev server
-CMD ["npm", "start"]
+CMD ["npm", "run", "dev"]

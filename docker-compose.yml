@@ -6,48 +6,43 @@ services:
       dockerfile: Dockerfile
     ports:
       - "5173:5173"
-    environment: 
-      VITE_API_URL: http://localhost:8000
-      CHOKIDAR_USEPOLLING: "true"   
+    environment:
+      VITE_API_URL: http://localhost:8001
+      CHOKIDAR_USEPOLLING: "true"
     volumes:
-      - ./frontend:/app             
-      - /app/node_modules        
+      - ./frontend:/app
+      - frontend-node-modules:/app/node_modules
     depends_on:
       - api-secure
-    command: npm start
+    command: npm run dev
 
-
-# Secure backend
-  # Secure backend
   api-secure:
     container_name: bluepeak-api-secure
     build:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "8001:8000"  # container port 8000 exposed on host 8001
+      - "8001:8000"
     environment:
       DB_HOST: db-secure
       DB_PORT: 5432
       DB_USER: user_secure
       DB_PASSWORD: password_secure
       DB_NAME: db_secure
-      NODE_ENV: development        # use development for nodemon/hot reload
+      NODE_ENV: development
       JWT_SECRET: production-secret
     volumes:
-      - ./backend:/app              # bind mount host code
-      - backend-node-modules:/app/node_modules  # preserve container node_modules
+      - ./backend:/app
+      - backend-node-modules:/app/node_modules
     depends_on:
       - db-secure
-    command: npm run dev-secure
+    command: npm run dev
 
-
-  # Secure database
   db-secure:
     container_name: bluepeak-db-secure
     image: postgres:17
     ports:
-      - "5434:5432"   # host port different
+      - "5434:5432"
     environment:
       POSTGRES_USER: user_secure
       POSTGRES_PASSWORD: password_secure
@@ -57,8 +52,7 @@ services:
       - ./backend/database:/docker-entrypoint-initdb.d
     restart: always
 
-
 volumes:
   bluepeak-secure:
   backend-node-modules:
-
+  frontend-node-modules:
