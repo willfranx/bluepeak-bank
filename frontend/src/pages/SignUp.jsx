@@ -53,12 +53,12 @@ export default function SignUp({ onLogin }) {
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Create an account</h2>
         <form onSubmit={submit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              placeholder="Full name"
+              placeholder="Username"
             />
           </div>
           <div>

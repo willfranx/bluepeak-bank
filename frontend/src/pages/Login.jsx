@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 
 export default function Login({ onLogin }) {
-  const [email, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -60,12 +60,12 @@ export default function Login({ onLogin }) {
         <form onSubmit={submit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Username
+              Email
             </label>
             <input
               value={email}
-              placeholder="Username"
-              onChange={(e) => setUsername(e.target.value)}
+              placeholder="you@example.com"
+              onChange={(e) => setEmail(e.target.value)}
               type="text"
               className="w-full px-3 py-2 border border-gray-300 bg-white rounded-md bg-white text-gray-900"
             />

@@ -121,7 +121,7 @@ export default function Profile({ user, onUserUpdate }) {
         ) : (
           <form onSubmit={onSave} className="space-y-4 text-gray-200">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">Name</label>
+              <label className="block text-sm font-medium text-gray-300 mb-1">Username</label>
               <input value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-white px-3 py-2 rounded-md text-gray-900" />
             </div>
 
