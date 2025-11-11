@@ -5,26 +5,32 @@ const SYSTEM_ACCOUNT_ID = 0;
 
 // Deposit money into an account
 export const deposit = async (req, res) => {
+
+    console.log("req.body:", req.body);
+    console.log("req.user:", req.user);
     
     const { accountid, amount } = req.body;
 
-    if (!accountid || !amount || amount <= 0) {
-        return res.status(400).json({ success: false, message: "Valid account ID and amount are required" })
+    if (typeof accountid !== "number" || typeof amount !== "number" || amount <= 0) {
+        return res.status(400).json({ success: false, message: "Valid account ID and amount are required" });
     }
 
     try {
-        const account = await pool.query("SELECT * FROM accounts WHERE accountid = $1", [accountid]);
+        const accountRes = await pool.query("SELECT * FROM accounts WHERE accountid = $1", [accountid])
+        const account = accountRes.rows[0]
 
-        if (account.rowCount === 0 || account.rows[0].userid !== req.user.userid) {
-        return res.status(403).json({ success: false, message: "Forbidden. Cannot deposit to this account"})
+        if (!account || account.userid !== req.user.userid) {
+            return res.status(403).json({ success: false, message: "Forbidden. Cannot deposit to this account" });
         }
 
-        const newBalance = account.rows[0].balance + amount;
+        const currentBalance = parseFloat(account.balance);
+        const newBalance = currentBalance + amount;
 
-        await pool.query("UPDATE accounts SET balance = $1 WHERE accountid = $2", [newBalance,accountid])
+        await pool.query("UPDATE accounts SET balance = $1 WHERE accountid = $2", [newBalance, accountid])
 
         const deposit = await pool.query("INSERT INTO transactions (srcid, desid, amount, type) VALUES ($1, $2, $3, $4) RETURNING *",
-        [SYSTEM_ACCOUNT_ID, accountid, amount, "deposit"]
+            [SYSTEM_ACCOUNT_ID, accountid, amount, "deposit"]
+
         )
 
         res.status(200).json({ success: true, data: deposit.rows[0], message: "Deposit successful" })
