@@ -1,7 +1,20 @@
 import { z } from "zod"
 
-export const createTransactionSchema = z.object({
-    fromAccountId: z.coerce.number().int().positive(),
-    toAccountId: z.coerce.number().int().positive(),
-    amount: z.number().positive()
+// Deposit schema
+export const depositSchema = z.object({
+    accountid: z.coerce.number().int().positive(),
+    amount: z.coerce.number().positive(),
+})
+
+// Withdraw schema
+export const withdrawSchema = z.object({
+    accountid: z.coerce.number().int().positive(),
+    amount: z.coerce.number().positive(),
+})
+
+// Transfer schema
+export const transferSchema = z.object({
+    srcid: z.coerce.number().int().positive(),
+    desid: z.coerce.number().int().positive(),
+    amount: z.coerce.number().positive(),
 })

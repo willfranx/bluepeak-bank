@@ -5,8 +5,8 @@ import pool from "../db.js";
 const cookieOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: 'Strict',
-    maxAge: 5 * 60 * 1000 // 5 minutes
+    sameSite: 'None',
+    maxAge: 10 * 60 * 1000 // 10 minutes
 };
 
 const createToken = (id) => {
