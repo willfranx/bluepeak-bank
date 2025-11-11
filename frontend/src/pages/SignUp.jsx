@@ -23,9 +23,9 @@ export default function SignUp({ onLogin }) {
       const payload = { name, email, password };
       const res = await api.post("/auth/register", payload);
       const body = res.data;
-      // backend returns the created user under `data` (secure controller) or `user` (insecure)
+      // backend returns the created user under `data`
       if (body && body.success) {
-        const user = body.user || body.data;
+        const user = body.data;
         if (!user) {
           setError("Registration succeeded but no user info returned");
           return;
