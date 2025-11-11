@@ -211,19 +211,39 @@ export const register = async (req, res) => {
             [name, email]
         );
 
+        const userid = newUser.rows[0].userid;
+
         // insert the password into the passwords table
         const newPassword = await pool.query(
             "INSERT INTO passwords (userid, hash) VALUES ($1, $2) RETURNING userid",
-            [newUser.rows[0].userid, passwordHash]
+            [userid, passwordHash]
         );
 
-        // commit to the users and passwords tables.
+        // Compute random starting balances in JavaScript (500.00 - 1000.00)
+        const checkingBalance = Number((Math.random() * 500 + 500).toFixed(2));
+        const savingsBalance = Number((Math.random() * 500 + 500).toFixed(2));
+
+        // Create default accounts for the new user
+
+        const defaultChecking = await pool.query(
+          `INSERT INTO accounts (userid, name, type, balance) VALUES ($1, $2, $3, $4) RETURNING *`,
+          [userid, `Checking ${userid}`, 'checking', checkingBalance]
+        );
+
+        const defaultSavings = await pool.query(
+          `INSERT INTO accounts (userid, name, type, balance) VALUES ($1, $2, $3, $4) RETURNING *`,
+          [userid, `Savings ${userid}`, 'saving', savingsBalance]
+        );
+
+        // commit the whole transaction (user, password, accounts)
         await pool.query("COMMIT");
 
         // award token for successfull account registration
-        const token = createToken(newUser.rows[0].userid); 
-        res.cookie("token", token, cookieOptions); 
-        res.status(201).json({ success: true, data: newUser.rows[0], message: "User added successfully!" });
+        const token = createToken(userid);
+        res.cookie("token", token, cookieOptions);
+
+        // Return created user and created accounts so frontend can use them immediately
+        res.status(201).json({ success: true, data: newUser.rows[0], accounts: [defaultChecking.rows[0], defaultSavings.rows[0]], message: "User added successfully!" });
 
     } catch (error) {
         // rollback the user and password commits if there was an error

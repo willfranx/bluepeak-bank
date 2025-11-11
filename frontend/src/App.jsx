@@ -43,7 +43,7 @@ function App() {
   const fetchAccounts = async (forUser) => {
     if (!forUser || !forUser.userid) return;
     try {
-      const res = await api.get(`/accounts/insecure/${forUser.userid}`);
+      const res = await api.get(`/accounts/${forUser.userid}`);
       if (res.data && res.data.success) {
         setAccounts(res.data.data || []);
       } else {

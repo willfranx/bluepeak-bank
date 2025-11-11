@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 
 export default function Login({ onLogin }) {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -12,16 +12,16 @@ export default function Login({ onLogin }) {
   const submit = async (e) => {
     e.preventDefault();
     setError("");
-    if (!username || !password) {
+    if (!email || !password) {
       setError("Please enter username and password");
       return;
     }
 
     try {
-      const payload = { username, password };
-      const res = await api.post("/auth/insecure/login", payload);
+      const payload = { email, password };
+      const res = await api.post("/auth/login", payload, { withCredentials: true });
       const body = res.data;
-      const user = body.user || body.data;
+      const user = body.user;
 
       if (!user) {
         setError(body.message || "Login failed");
@@ -60,12 +60,12 @@ export default function Login({ onLogin }) {
         <form onSubmit={submit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Username
+              Email
             </label>
             <input
-              value={username}
-              placeholder="Username"
-              onChange={(e) => setUsername(e.target.value)}
+              value={email}
+              placeholder="you@example.com"
+              onChange={(e) => setEmail(e.target.value)}
               type="text"
               className="w-full px-3 py-2 border border-gray-300 bg-white rounded-md bg-white text-gray-900"
             />
