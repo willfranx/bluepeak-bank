@@ -13,46 +13,47 @@ services:
       - ./frontend:/app
       - frontend-node-modules:/app/node_modules
     depends_on:
-      - api-secure
+      - api
     command: npm run dev
 
-  api-secure:
-    container_name: bluepeak-api-secure
+  api:
+    container_name: bluepeak-api
     build:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "8001:8000"
+      - "8001:8001"  
     environment:
-      DB_HOST: db-secure
+      DB_HOST: db
       DB_PORT: 5432
-      DB_USER: user_secure
-      DB_PASSWORD: password_secure
-      DB_NAME: db_secure
+      DB_USER: user
+      DB_PASSWORD: password
+      DB_NAME: db
       NODE_ENV: development
-      JWT_SECRET: production-secret
+      JWT_SECRET: super-secret
+      REACT_CLIENT_URL: http://localhost:5173  
     volumes:
       - ./backend:/app
       - backend-node-modules:/app/node_modules
     depends_on:
-      - db-secure
+      - db
     command: npm run dev
 
-  db-secure:
-    container_name: bluepeak-db-secure
+  db:
     image: postgres:17
+    container_name: bluepeak-db
     ports:
-      - "5434:5432"
+      - "5432:5432"
     environment:
-      POSTGRES_USER: user_secure
-      POSTGRES_PASSWORD: password_secure
-      POSTGRES_DB: db_secure
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: db
     volumes:
-      - bluepeak-secure:/var/lib/postgresql/data
+      - bluepeak-data:/var/lib/postgresql/data
       - ./backend/database:/docker-entrypoint-initdb.d
     restart: always
 
 volumes:
-  bluepeak-secure:
+  bluepeak-data:
   backend-node-modules:
   frontend-node-modules:
