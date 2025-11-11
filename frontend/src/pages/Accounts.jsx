@@ -16,10 +16,11 @@ export default function Accounts({ accounts: initialAccounts = [], user }) {
         const userId = user.userid;
         const res = await api.get(`/accounts/${userId}`, { withCredentials: true });
         // backend returns { success: true, data: [...] }
-        if (res.data && res.data.success) {
-          setAccounts(res.data.data || []);
+        const accounts = res.data;
+        if (accounts && accounts.success) {
+          setAccounts(accounts.data || []);
         } else {
-          setError(res.data?.message || "Failed to load accounts");
+          setError(accounts?.message || "Failed to load accounts");
         }
       } catch (err) {
         setError(

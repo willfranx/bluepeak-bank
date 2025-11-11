@@ -21,7 +21,7 @@ export default function Login({ onLogin }) {
       const payload = { email, password };
       const res = await api.post("/auth/login", payload, { withCredentials: true });
       const body = res.data;
-      const user = body.user || body.data;
+      const user = body.user;
 
       if (!user) {
         setError(body.message || "Login failed");
