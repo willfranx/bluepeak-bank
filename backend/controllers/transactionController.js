@@ -1,179 +1,149 @@
 import pool from "../db.js";
+import { sendResponse } from "../middleware/responseUtils.js";
 
 const SYSTEM_ACCOUNT_ID = 1;
 
 // Deposit Function
-export const deposit = async (req, res) => {
-  try {
+export const deposit = async (req, res, next) => {
+    try {
+        const { accountId, amount } = req.body;
 
-    const { accountId, amount } = req.body;
+        // Check if account exists
+        const accountResult = await pool.query(
+            "SELECT balance FROM accounts WHERE accountid=$1",
+            [accountId]
+        );
 
-    if (!accountId || !amount || amount <= 0) {
-        return res.status(400).json({ error: "Invalid deposit details" });
-    }
+        if (accountResult.rows.length === 0) {
+            return sendResponse(res, 404, "Account not found");
+        }
 
-    // Check if account exists
-    const accountResult = await pool.query(
-        "SELECT balance FROM accounts WHERE accountid=$1", [accountId]
-    );
+        // Update account balance
+        await pool.query(
+            "UPDATE accounts SET balance = balance + $1 WHERE accountid=$2",
+            [amount, accountId]
+        );
 
-    if (accountResult.rows.length === 0) {
-        return res.status(404).json({ error: "Account not found" });
-    }
+        // Record transaction
+        const transaction = await pool.query(
+            `INSERT INTO transactions (srcid, desid, amount, type, created, approved, complete)
+            VALUES ($1, $2, $3, 'deposit', NOW(), true, true) RETURNING *`,
+            [SYSTEM_ACCOUNT_ID, accountId, amount]
+        );
 
-    // Update user's balance
-    await pool.query(
-        "UPDATE accounts SET balance = balance + $1 WHERE accountid = $2", [amount, accountId]
-    );
-
-    // Record transaction
-    const transaction = await pool.query(
-        `INSERT INTO transactions (srcid, desid, amount, type, created, approved, complete)
-        VALUES ($1, $2, $3, 'deposit', NOW(), true, true)
-        RETURNING *`,
-        [SYSTEM_ACCOUNT_ID, accountId, amount]
-    );
-
-    res.status(201).json({ message: "Deposit successful", transaction: transaction.rows[0],
-    })
+        sendResponse(res, 201, "Deposit successful", transaction.rows[0]);
 
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Server error" });
+    next(err);
   }
 };
 
 // Withdraw Function
-export const withdraw = async (req, res) => {
+export const withdraw = async (req, res, next) => {
+    try {
+        const { accountId, amount } = req.body;
 
-  try {
-    
-    const { accountId, amount } = req.body;
+        const accountResult = await pool.query(
+            "SELECT balance FROM accounts WHERE accountid=$1",
+            [accountId]
+        );
 
-    if (!accountId || !amount || amount <= 0) {
-        return res.status(400).json({ error: "Invalid withdrawal details" });
-    }
+        if (accountResult.rows.length === 0) {
+            return sendResponse(res, 404, "Account not found");
+        }
 
-    // Check if account exists
-    const accountResult = await pool.query(
-        "SELECT balance FROM accounts WHERE accountid=$1",[accountId]
-    );
+        const currentBalance = parseFloat(accountResult.rows[0].balance);
+        if (currentBalance < amount) {
+            return sendResponse(res, 400, "Insufficient funds");
+        }
 
-    if (accountResult.rows.length === 0) {
-        return res.status(404).json({ error: "Account not found" });
-    }
-
-    const currentBalance = parseFloat(accountResult.rows[0].balance);
-
-    if (currentBalance < amount) {
-        return res.status(400).json({ error: "Insufficient funds" });
-    }
-
-    // Update user's balance
-    await pool.query(
-        "UPDATE accounts SET balance = balance - $1 WHERE accountid = $2",
+        // Update account balance
+        await pool.query(
+            "UPDATE accounts SET balance = balance - $1 WHERE accountid=$2",
         [amount, accountId]
-    );
+        );
 
-    // Record the transaction
-    const transaction = await pool.query(
-        `INSERT INTO transactions (srcid, desid, amount, type, created, approved, complete)
-        VALUES ($1, $2, $3, 'withdraw', NOW(), true, true)
-        RETURNING *`,
-        [accountId, SYSTEM_ACCOUNT_ID, amount]
-    );
+        // Record transaction
+            const transaction = await pool.query(
+            `INSERT INTO transactions (srcid, desid, amount, type, created, approved, complete)
+            VALUES ($1, $2, $3, 'withdraw', NOW(), true, true) RETURNING *`,
+            [accountId, SYSTEM_ACCOUNT_ID, amount]
+        );
 
-    res.status(201).json({message: "Withdrawal successful", transaction: transaction.rows[0],
-    });
+        sendResponse(res, 201, "Withdrawal successful", transaction.rows[0]);
 
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Server error" });
+        next(err);
   }
 };
 
-// Transfer money between users
-export const transfer = async (req, res) => {
+// Transfer Function
+export const transfer = async (req, res, next) => {
+    try {
+        const { srcId, desId, amount } = req.body;
+        const transferAmount = Number(amount);
 
-  try {
-    
-    const { srcId, desId, amount } = req.body;
-    const transferAmount = Number(amount);
+        const srcRes = await pool.query(
+            "SELECT balance, userid FROM accounts WHERE accountid=$1",
+            [srcId]
+        );
+        const srcAccount = srcRes.rows[0];
 
-    if (!srcId || !desId || srcId === desId || isNaN(transferAmount) || transferAmount <= 0) {
-        return res.status(400).json({ success: false, message: "Invalid transfer details" });
-    }
+        if (!srcAccount || srcAccount.userid !== req.user.userid) {
+            return sendResponse(res, 403, "Not authorized to transfer from this account");
+        }
 
-    // Get source account
-    const srcRes = await pool.query(
-        "SELECT balance, userid FROM accounts WHERE accountid=$1", [srcId]
-    );
+        const desRes = await pool.query(
+            "SELECT balance FROM accounts WHERE accountid=$1",
+            [desId]
+        );
+        const desAccount = desRes.rows[0];
 
-    const srcAccount = srcRes.rows[0];
+        if (!desAccount) {
+            return sendResponse(res, 404, "Destination account not found");
+        }
 
-    if (!srcAccount || srcAccount.userid !== req.user.userid) {
-        return res.status(403).json({success: false, message: "Not authorized to transfer from this account"})
-    }
+        if (parseFloat(srcAccount.balance) < transferAmount) {
+            return sendResponse(res, 400, "Insufficient funds");
+        }
 
-    // Get destination account
-    const desRes = await pool.query(
-        "SELECT balance FROM accounts WHERE accountid=$1",
-        [desId]
-    );
+        // Update balances
+        await pool.query(
+            "UPDATE accounts SET balance = balance - $1 WHERE accountid=$2",
+            [transferAmount, srcId]
+        );
+        await pool.query(
+            "UPDATE accounts SET balance = balance + $1 WHERE accountid=$2",
+            [transferAmount, desId]
+        );
 
-    const desAccount = desRes.rows[0];
+        // Record transaction
+        const transferRes = await pool.query(
+            `INSERT INTO transactions (srcid, desid, amount, type, created, approved, complete)
+            VALUES ($1, $2, $3, 'transfer', NOW(), true, true) RETURNING *`,
+            [srcId, desId, transferAmount]
+        );
 
-    if (!desAccount) {
-        return res.status(404).json({ success: false, message: "Destination account not found" });
-    }
-
-    // Check balance
-    const srcBalance = parseFloat(srcAccount.balance);
-    if (srcBalance < transferAmount) {
-        return res.status(400).json({ success: false, message: "Insufficient funds" });
-    }
-
-    // Update users balances
-    await pool.query(
-        "UPDATE accounts SET balance = balance - $1 WHERE accountid=$2",
-        [transferAmount, srcId]
-    )
-    await pool.query(
-        "UPDATE accounts SET balance = balance + $1 WHERE accountid=$2",
-        [transferAmount, desId]
-    )
-
-    // Record transaction
-    const transferRes = await pool.query(
-        `INSERT INTO transactions (srcid, desid, amount, type, created, approved, complete)
-        VALUES ($1, $2, $3, 'transfer', NOW(), true, true) RETURNING *`,
-        [srcId, desId, transferAmount]
-    );
-
-    res.status(201).json({ success: true, message: "Transfer successful", transaction: transferRes.rows[0],
-    });
+        sendResponse(res, 201, "Transfer successful", transferRes.rows[0]);
 
   } catch (err) {
-    console.error("Transfer error:", err);
-    res.status(500).json({ success: false, message: "Server error" });
+        next(err);
   }
 };
 
 // Get all transactions for the user
-export const getTransactions = async (req, res) => {
-    
+export const getTransactions = async (req, res, next) => {
     try {
-
         const accountsResult = await pool.query(
-            "SELECT accountid FROM accounts WHERE userid = $1",
+            "SELECT accountid FROM accounts WHERE userid=$1",
             [req.user.userid]
         );
 
-        const accountIds = accountsResult.rows.map((acc) => acc.accountid);
+        const accountIds = accountsResult.rows.map(acc => acc.accountid);
 
         if (accountIds.length === 0) {
-        return res.status(200).json({ success: true, data: [] });
-    }
+            return sendResponse(res, 200, "No transactions found", []);
+        }
 
         const transactionsResult = await pool.query(
             `SELECT transactionid, srcid, desid, amount, type, created, approved, approvedtime, complete, completetime
@@ -183,14 +153,14 @@ export const getTransactions = async (req, res) => {
             [accountIds]
         );
 
-        const transactions = transactionsResult.rows.map((tx) => ({
-            ...trans, amount: parseFloat(trans.amount),
+        const transactions = transactionsResult.rows.map(tx => ({
+            ...tx,
+            amount: parseFloat(tx.amount),
         }));
 
-        res.status(200).json({ success: true, data: transactions });
-
+        sendResponse(res, 200, "Transactions fetched successfully", transactions);
+        
   } catch (err) {
-    console.error("Get transactions error:", err);
-    res.status(500).json({ success: false, message: "Server error" });
+        next(err);
   }
 };

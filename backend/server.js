@@ -8,6 +8,7 @@ import bankAccountRoutes from "./routes/bankAccountRoutes.js"
 import userAuthRoutes from "./routes/userAuthRoutes.js"
 import transactionRoutes from "./routes/transactionRoutes.js"
 import pool from "./db.js";
+import { globalErrorHandler } from "./middleware/responseUtils.js";
 
 dotenv.config()
 
@@ -25,6 +26,8 @@ app.use(morgan("dev"));
 
 app.use(express.json());
 app.use(cookieParser())
+
+app.use(globalErrorHandler)
 
 app.get("/", (req, res) => {
   res.send("Welcome to the Web Security App API!");
