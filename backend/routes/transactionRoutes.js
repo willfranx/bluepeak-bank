@@ -11,6 +11,6 @@ const router = express.Router();
 router.post("/deposit", protect, validate({ body: depositSchema }), deposit);
 router.post("/withdraw", protect, validate({ body: withdrawSchema }), withdraw);
 router.post("/transfer", protect, validate({ body: transferSchema }), transfer);
-router.get("/",   protect, getTransactions);
+router.get("/", protect, getTransactions);
 
 export default router
