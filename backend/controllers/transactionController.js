@@ -1,144 +1,166 @@
 import pool from "../db.js";
+import { sendResponse } from "../middleware/responseUtils.js";
 
-// Represents the bank/system account
-const SYSTEM_ACCOUNT_ID = 0;
+const SYSTEM_ACCOUNT_ID = 1;
 
-// Deposit money into an account
-export const deposit = async (req, res) => {
-
-    console.log("req.body:", req.body);
-    console.log("req.user:", req.user);
-    
-    const { accountid, amount } = req.body;
-
-    if (typeof accountid !== "number" || typeof amount !== "number" || amount <= 0) {
-        return res.status(400).json({ success: false, message: "Valid account ID and amount are required" });
-    }
-
+// Deposit Function
+export const deposit = async (req, res, next) => {
     try {
-        const accountRes = await pool.query("SELECT * FROM accounts WHERE accountid = $1", [accountid])
-        const account = accountRes.rows[0]
+        const { accountId, amount } = req.body;
 
-        if (!account || account.userid !== req.user.userid) {
-            return res.status(403).json({ success: false, message: "Forbidden. Cannot deposit to this account" });
-        }
-
-        const currentBalance = parseFloat(account.balance);
-        const newBalance = currentBalance + amount;
-
-        await pool.query("UPDATE accounts SET balance = $1 WHERE accountid = $2", [newBalance, accountid])
-
-        const deposit = await pool.query("INSERT INTO transactions (srcid, desid, amount, type) VALUES ($1, $2, $3, $4) RETURNING *",
-            [SYSTEM_ACCOUNT_ID, accountid, amount, "deposit"]
-
-        )
-
-        res.status(200).json({ success: true, data: deposit.rows[0], message: "Deposit successful" })
-
-    } catch (error) {
-        console.error("Deposit error:", error);
-        res.status(500).json({ success: false, message: "Internal Server Error" });
-    }
-};
-
-// Withdraw money from an account
-export const withdraw = async (req, res) => {
-    
-    const { accountid, amount } = req.body;
-
-    if (!accountid || !amount || amount <= 0) {
-        return res.status(400).json({success: false, message: "Valid account ID and amount are required"})
-    }
-
-    try {
-        
-        const account = await pool.query("SELECT * FROM accounts WHERE accountid = $1", [accountid])
-
-        if (account.rowCount === 0 || account.rows[0].userid !== req.user.userid) {
-            return res.status(403).json({success: false, message: "Forbidden. Cannot withdraw from this account"})
-        }
-
-        if (account.rows[0].balance < amount) {
-            return res.status(400).json({ success: false, message: "Insufficient balance" });
-        }
-
-        const newBalance = account.rows[0].balance - amount;
-
-        await pool.query("UPDATE accounts SET balance = $1 WHERE accountid = $2", [newBalance,accountid])
-
-        const transaction = await pool.query(
-            "INSERT INTO transactions (srcid, desid, amount, type) VALUES ($1, $2, $3, $4) RETURNING *",
-            [accountid, SYSTEM_ACCOUNT_ID, amount, "withdraw"]
-        )
-
-        res.status(200).json({success: true, data: transaction.rows[0], message: "Withdrawal successful" })
-
-    } catch (error) {
-        console.error("Withdraw error:", error)
-        res.status(500).json({ success: false, message: "Internal Server Error" })
-    }
-};
-
-// Transfer money between accounts
-export const transfer = async (req, res) => {
-    
-    const { srcid, desid, amount } = req.body;
-
-    if (!srcid || !desid || !amount || amount <= 0) {
-        return res.status(400).json({success: false, message: "Valid source, destination, and amount are required" })
-    }
-
-    try {
-        
-        const srcAccount = await pool.query("SELECT * FROM accounts WHERE accountid = $1", [srcid])
-        const desAccount = await pool.query("SELECT * FROM accounts WHERE accountid = $1", [desid]) 
-
-        if ( srcAccount.rowCount === 0 || desAccount.rowCount === 0 || srcAccount.rows[0].userid !== req.user.userid ) {
-            return res.status(403).json({ success: false, message: "Forbidden. Cannot transfer from this account" })
-        }
-
-        if (srcAccount.rows[0].balance < amount) {
-            return res.status(400).json({ success: false, message: "Insufficient balance" })
-        }
-
-        await pool.query("UPDATE accounts SET balance = balance - $1 WHERE accountid = $2", [amount, srcid])
-        await pool.query("UPDATE accounts SET balance = balance + $1 WHERE accountid = $2", [amount, desid])
-
-        const transaction = await pool.query( "INSERT INTO transactions (srcid, desid, amount, type) VALUES ($1, $2, $3, $4) RETURNING *",
-            [srcid, desid, amount, "transfer"]
-        )
-
-        res.status(200).json({ success: true, data: transaction.rows[0], message: "Transfer successful" })
-
-    } catch (error) {
-        console.error("Transfer error:", error);
-        res.status(500).json({ success: false, message: "Internal Server Error" })
-    }
-
-};
-
-// Get transactions for an account
-export const getTransactions = async (req, res) => {
-    
-    const { accountid } = req.params;
-
-    try {
-        
-        const account = await pool.query( "SELECT * FROM accounts WHERE accountid = $1", [accountid])
-
-        if (account.rowCount === 0 || account.rows[0].userid !== req.user.userid) {
-            return res.status(403).json({success: false, message: "Forbidden. Cannot view transactions for this account"})
-        }
-
-        const transactions = await pool.query("SELECT * FROM transactions WHERE srcid = $1 OR desid = $1 ORDER BY transactionid DESC",
-            [accountid]
+        // Check if account exists
+        const accountResult = await pool.query(
+            "SELECT balance FROM accounts WHERE accountid=$1",
+            [accountId]
         );
 
-        res.status(200).json({ success: true, data: transactions.rows })
+        if (accountResult.rows.length === 0) {
+            return sendResponse(res, 404, "Account not found");
+        }
 
-    } catch (error) {
-        console.error("Get transactions error:", error);
-        res.status(500).json({ success: false, message: "Internal Server Error" })
-    }
+        // Update account balance
+        await pool.query(
+            "UPDATE accounts SET balance = balance + $1 WHERE accountid=$2",
+            [amount, accountId]
+        );
 
+        // Record transaction
+        const transaction = await pool.query(
+            `INSERT INTO transactions (srcid, desid, amount, type, created, approved, complete)
+            VALUES ($1, $2, $3, 'deposit', NOW(), true, true) RETURNING *`,
+            [SYSTEM_ACCOUNT_ID, accountId, amount]
+        );
+
+        sendResponse(res, 201, "Deposit successful", transaction.rows[0]);
+
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Withdraw Function
+export const withdraw = async (req, res, next) => {
+    try {
+        const { accountId, amount } = req.body;
+
+        const accountResult = await pool.query(
+            "SELECT balance FROM accounts WHERE accountid=$1",
+            [accountId]
+        );
+
+        if (accountResult.rows.length === 0) {
+            return sendResponse(res, 404, "Account not found");
+        }
+
+        const currentBalance = parseFloat(accountResult.rows[0].balance);
+        if (currentBalance < amount) {
+            return sendResponse(res, 400, "Insufficient funds");
+        }
+
+        // Update account balance
+        await pool.query(
+            "UPDATE accounts SET balance = balance - $1 WHERE accountid=$2",
+        [amount, accountId]
+        );
+
+        // Record transaction
+            const transaction = await pool.query(
+            `INSERT INTO transactions (srcid, desid, amount, type, created, approved, complete)
+            VALUES ($1, $2, $3, 'withdraw', NOW(), true, true) RETURNING *`,
+            [accountId, SYSTEM_ACCOUNT_ID, amount]
+        );
+
+        sendResponse(res, 201, "Withdrawal successful", transaction.rows[0]);
+
+  } catch (err) {
+        next(err);
+  }
+};
+
+// Transfer Function
+export const transfer = async (req, res, next) => {
+    try {
+        const { srcId, desId, amount } = req.body;
+        const transferAmount = Number(amount);
+
+        const srcRes = await pool.query(
+            "SELECT balance, userid FROM accounts WHERE accountid=$1",
+            [srcId]
+        );
+        const srcAccount = srcRes.rows[0];
+
+        if (!srcAccount || srcAccount.userid !== req.user.userid) {
+            return sendResponse(res, 403, "Not authorized to transfer from this account");
+        }
+
+        const desRes = await pool.query(
+            "SELECT balance FROM accounts WHERE accountid=$1",
+            [desId]
+        );
+        const desAccount = desRes.rows[0];
+
+        if (!desAccount) {
+            return sendResponse(res, 404, "Destination account not found");
+        }
+
+        if (parseFloat(srcAccount.balance) < transferAmount) {
+            return sendResponse(res, 400, "Insufficient funds");
+        }
+
+        // Update balances
+        await pool.query(
+            "UPDATE accounts SET balance = balance - $1 WHERE accountid=$2",
+            [transferAmount, srcId]
+        );
+        await pool.query(
+            "UPDATE accounts SET balance = balance + $1 WHERE accountid=$2",
+            [transferAmount, desId]
+        );
+
+        // Record transaction
+        const transferRes = await pool.query(
+            `INSERT INTO transactions (srcid, desid, amount, type, created, approved, complete)
+            VALUES ($1, $2, $3, 'transfer', NOW(), true, true) RETURNING *`,
+            [srcId, desId, transferAmount]
+        );
+
+        sendResponse(res, 201, "Transfer successful", transferRes.rows[0]);
+
+  } catch (err) {
+        next(err);
+  }
+};
+
+// Get all transactions for the user
+export const getTransactions = async (req, res, next) => {
+    try {
+        const accountsResult = await pool.query(
+            "SELECT accountid FROM accounts WHERE userid=$1",
+            [req.user.userid]
+        );
+
+        const accountIds = accountsResult.rows.map(acc => acc.accountid);
+
+        if (accountIds.length === 0) {
+            return sendResponse(res, 200, "No transactions found", []);
+        }
+
+        const transactionsResult = await pool.query(
+            `SELECT transactionid, srcid, desid, amount, type, created, approved, approvedtime, complete, completetime
+            FROM transactions
+            WHERE srcid = ANY($1) OR desid = ANY($1)
+            ORDER BY transactionid DESC`,
+            [accountIds]
+        );
+
+        const transactions = transactionsResult.rows.map(tx => ({
+            ...tx,
+            amount: parseFloat(tx.amount),
+        }));
+
+        sendResponse(res, 200, "Transactions fetched successfully", transactions);
+        
+  } catch (err) {
+        next(err);
+  }
 };

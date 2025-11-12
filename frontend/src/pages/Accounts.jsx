@@ -13,8 +13,7 @@ export default function Accounts({ accounts: initialAccounts = [], user }) {
       setLoading(true);
       setError("");
       try {
-        const userId = user.userid;
-        const res = await api.get(`/accounts/${userId}`, { withCredentials: true });
+        const res = await api.get(`/accounts`, { withCredentials: true });
         // backend returns { success: true, data: [...] }
         const accounts = res.data;
         if (accounts && accounts.success) {

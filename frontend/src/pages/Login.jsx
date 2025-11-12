@@ -7,41 +7,44 @@ export default function Login({ onLogin }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const submit = async (e) => {
-    e.preventDefault();
-    setError("");
-    if (!email || !password) {
-      setError("Please enter username and password");
+const submit = async (e) => {
+  e.preventDefault();
+  setError("");
+  if (!email || !password) {
+    setError("Please enter username and password");
+    return;
+  }
+
+  try {
+    const payload = { email, password };
+    const res = await api.post("/auth/login", payload, { withCredentials: true });
+    const body = res.data;
+    const user = body.data; 
+
+    if (!user) {
+      setError(body.message || "Login failed");
       return;
     }
 
-    try {
-      const payload = { email, password };
-      const res = await api.post("/auth/login", payload, { withCredentials: true });
-      const body = res.data;
-      const user = body.user;
+    onLogin(user);
+    navigate("/accounts");
 
-      if (!user) {
-        setError(body.message || "Login failed");
-        return;
-      }
-
-      onLogin(user);
-      navigate("/accounts");
-    } catch (err) {
-      if (err.response) {
-        setError(
-          err.response.data?.message || `Login failed (${err.response.status})`
-        );
-      } else if (err.request) {
-        setError("No response from server");
-      } else {
-        setError(err.message || "Login error");
-      }
+  } catch (err) {
+    if (err.response) {
+      setError(
+        err.response.data?.message || `Login failed (${err.response.status})`
+      );
+    } else if (err.request) {
+      setError("No response from server");
+    } else {
+      setError(err.message || "Login error");
     }
-  };
+  }
+};
+
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-white py-8 gap-4">
@@ -67,7 +70,7 @@ export default function Login({ onLogin }) {
               placeholder="you@example.com"
               onChange={(e) => setEmail(e.target.value)}
               type="text"
-              className="w-full px-3 py-2 border border-gray-300 bg-white rounded-md bg-white text-gray-900"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
             />
           </div>
           <div>
@@ -79,16 +82,17 @@ export default function Login({ onLogin }) {
               placeholder="Password"
               onChange={(e) => setPassword(e.target.value)}
               type="password"
-              className="w-full px-3 py-2 border border-gray-300 bg-white rounded-md bg-white text-gray-900"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
             />
           </div>
           {error && <div className="text-sm text-red-600">{error}</div>}
           <div>
             <button
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
               type="submit"
+              disabled={loading}
+              className={`w-full px-4 py-2 rounded-md text-white ${loading ? 'bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'}`}
             >
-              Sign in
+              {loading ? "Signing in..." : "Sign in"}
             </button>
           </div>
         </form>

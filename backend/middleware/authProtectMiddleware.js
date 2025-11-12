@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken"
 import pool from "../db.js"
+import { sendResponse } from "../middleware/responseUtils.js";
 
 export const protect = async (req, res, next) => {
     try {
@@ -7,7 +8,7 @@ export const protect = async (req, res, next) => {
         const token = req.cookies.token;
 
         if (!token) {
-            return res.status(401).json({ success: false, message: "Not authorized: no token" });
+            return sendResponse(res, 401, "Not authorized: no token");
         }
 
         const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
@@ -16,7 +17,7 @@ export const protect = async (req, res, next) => {
         const getUser = await pool.query("SELECT userid, name, email FROM users WHERE userid = $1", [id]);
 
         if (getUser.rows.length === 0) {
-            return res.status(401).json({ success: false, message: "Not authorized: user not found" });
+            return sendResponse(res, 401, "Not authorized: user not found")
         }
 
         req.user = getUser.rows[0]
@@ -24,6 +25,6 @@ export const protect = async (req, res, next) => {
 
     } catch (error) {
         console.error("Auth middleware error:", error.message);
-        res.status(401).json({ success: false, message: "Not authorized" });
+        return sendResponse(res, 401, "Not authorized");
     }
 }

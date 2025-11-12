@@ -1,12 +1,13 @@
 import jwt from "jsonwebtoken"
 import { hash, verify } from "@node-rs/argon2"
 import pool from "../db.js";
+import { sendResponse } from "../middleware/responseUtils.js";
 
 const cookieOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: 'Strict',
-    maxAge: 5 * 60 * 1000 // 5 minutes
+    sameSite: 'Lax',
+    maxAge: 10 * 60 * 1000 // 10 minutes
 };
 
 const createToken = (id) => {
@@ -243,14 +244,15 @@ export const register = async (req, res) => {
         res.cookie("token", token, cookieOptions);
 
         // Return created user and created accounts so frontend can use them immediately
-        res.status(201).json({ success: true, data: newUser.rows[0], accounts: [defaultChecking.rows[0], defaultSavings.rows[0]], message: "User added successfully!" });
+        sendResponse(res, 201, "User added successfully!", {
+          user: newUser.rows[0],
+          accounts: [defaultChecking.rows[0], defaultSavings.rows[0]],
+        })
 
     } catch (error) {
         // rollback the user and password commits if there was an error
         await pool.query("ROLLBACK");
-
-        console.error("Error inserting user:", error);
-        res.status(500).json({ success: false, message: "Error adding user" });
+        next(err)
     }
 };
 
@@ -299,13 +301,14 @@ export const login = async (req, res) => {
         // log the successful login
         await logUserEvent(user.userid, "Successful Authentication");
 
-        res.status(200).json({success: true,message: `Welcome ${user.name}`, 
-            user: { userid: user.userid, name: user.name, email: user.email }
+        sendResponse(res, 200, `Welcome ${user.name}`, {
+            userid: user.userid,
+            name: user.name,
+            email: user.email,
         })
 
     } catch (error) {
-        console.error("Login error:", error);
-        res.status(500).json({ success: false, message: "Server error" });
+      next(err);
     }
 }
 
@@ -326,16 +329,19 @@ export const logout = async (req, res) => {
       
       // Clear the cookie and return success
       res.cookie("token", "", { ...cookieOptions, maxAge: 0 });
-      res.status(200).json({ success: true, message: "User is logged out" });
+      sendResponse(res, 200, "User is logged out");
 
     } catch (error) {
-      console.error("Logout error:", error);
-      return res.status(500).json({ success: false, message: "Logout: error during logout" });
+      next(err)
     }
 };
 
 
 // User profile is protected and returns info for only logged in users
 export const profile = async (req, res) => {
-    res.json(req.user)
+  try {
+    sendResponse(res, 200, "User profile", req.user);
+  } catch (error) {
+    next(err);
+  }
 }

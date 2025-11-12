@@ -1,119 +1,93 @@
 import pool from "../db.js";
+import { sendResponse } from "../middleware/responseUtils.js";
 
 // Create a new account for an existing user
-export const createAccount = async (req, res) => {
-  const { userId, name, accountType, balance = 0 } = req.body;
-
-  if (!userId || !name || !accountType) {
-    return res.status(400).json({ success: false, message: "userId, name, and accountType are required" });
-  }
-
-
-  // Make sue the logged-in user matches the request userid
-  if (req.user.userid !== userId) {
-    return res.status(403).json({ success: false, message: "Forbidden. Cannot create accounts for another user" });
-  }
-
+export const createAccount = async (req, res, next) => {
   try {
+    const { userId, name, accountType, balance = 0 } = req.body;
+
+    // Ensure logged-in user matches requested userId
+    if (req.user.userid !== userId) {
+      return sendResponse(res, 403, "Forbidden. Cannot create accounts for another user");
+    }
+
     // Check if user exists
-    const userExists = await pool.query("SELECT 1 FROM users WHERE userid = $1 LIMIT 1", [userId]);
+    const userExists = await pool.query(
+      "SELECT 1 FROM users WHERE userid = $1 LIMIT 1",
+      [userId]
+    );
     if (userExists.rowCount === 0) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return sendResponse(res, 404, "User not found");
     }
 
     // Create account
     const newAccount = await pool.query(
-      `INSERT INTO accounts (userid, name, type, balance) VALUES ($1, $2, $3, COALESCE($4, 0.00)) RETURNING *`,
+      "INSERT INTO accounts (userid, name, type, balance) VALUES ($1, $2, $3, COALESCE($4,0)) RETURNING *",
       [userId, name, accountType, balance]
-    )
+    );
 
-    res.status(201).json({
-      success: true,
-      data: newAccount.rows[0],
-      message: "Account created successfully",
-    });
-  } catch (error) {
-    console.error("Error creating account:", error);
-    res.status(500).json({ success: false, message: "Error creating account" });
+    sendResponse(res, 201, "Account created successfully", newAccount.rows[0]);
+  } catch (err) {
+    next(err);
   }
 };
 
-// Get all accounts for a specific user
-export const getUserAccounts = async (req, res) => {
-  const { userId } = req.params;
-
-  // Prevent accessing another user's account
-  if (req.user.userid !== userId) {
-        return res.status(403).json({ success: false, message: "Forbidden. Cannot view other users' accounts" });
-  }
-
+// Get all accounts for the logged-in user
+export const getUserAccounts = async (req, res, next) => {
   try {
     const result = await pool.query(
       "SELECT * FROM accounts WHERE userid = $1 ORDER BY accountid ASC",
-      [userId]
+      [req.user.userid]
     );
 
     if (result.rowCount === 0) {
-      return res.status(404).json({ success: false, message: "No accounts found for this user" });
+      return sendResponse(res, 200, "No accounts found for this user", []);
     }
-    res.status(200).json({ success: true, data: result.rows });
-  } catch (error) {
-    console.error("Error fetching user accounts:", error);
-    res.status(500).json({ success: false, message: "Internal Server Error" });
+
+    sendResponse(res, 200, "User accounts fetched successfully", result.rows);
+  } catch (err) {
+    next(err);
   }
 };
 
 // Delete a user's account (only if no transactions exist)
-export const deleteAccount = async (req, res) => {
-  const { id: accountId } = req.params;
-
+export const deleteAccount = async (req, res, next) => {
   try {
-    // Check if account exists and get owner
+    const { id: accountId } = req.params;
+
     const accountResult = await pool.query(
-      `SELECT userid FROM accounts WHERE accountid = $1`,
-      [accountId] 
-    )
-
-    if (!accountResult.rowCount) {
-      return res.status(404).json({success: false, message: "Account not found"})
-    }
-
-    // Check Ownership
-    const accountOwnerId = accountResult.rows[0].userid;
-
-    if (accountOwnerId !== req.user.userid) {
-      return res.status(403).json({success: false, message: "Forbidden. You do not own this account."})
-    }
-
-    // Check for existing transactions
-    const hasTransactions = await pool.query(
-      "SELECT 1 FROM transactions WHERE srcid = $1 OR desid = $1 LIMIT 1",
+      "SELECT userid, balance FROM accounts WHERE accountid = $1",
       [accountId]
     );
 
-    if (hasTransactions.rowCount > 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Account has existing transactions and cannot be deleted",
-      });
+    if (accountResult.rowCount === 0) {
+      return sendResponse(res, 404, "Account not found");
     }
 
-    // Delete account
-    const result = await pool.query(
+    const account = accountResult.rows[0];
+
+    // Ownership check
+    if (account.userid !== req.user.userid) {
+      return sendResponse(res, 403, "Forbidden. You do not own this account.");
+    }
+
+    const balance = parseFloat(account.balance);
+
+    if (isNaN(balance)) {
+      return sendResponse(res, 400, "Account balance is invalid. Cannot delete account.");
+    }
+
+    if (balance !== 0) {
+      return sendResponse(res, 400, "Account balance is not zero. Cannot delete account with funds.");
+    }
+
+    const deleted = await pool.query(
       "DELETE FROM accounts WHERE accountid = $1 RETURNING *",
       [accountId]
     );
 
-    if (result.rowCount === 0) {
-      return res.status(404).json({ success: false, message: "Account not found" });
-    }
-
-    res.status(200).json({ success: true, data: result.rows[0],
-      message: "Account deleted successfully",
-    });
-    
-  } catch (error) {
-    console.error("Error deleting account:", error);
-    res.status(500).json({ success: false, message: "Internal Server Error" });
+    sendResponse(res, 200, "Account deleted successfully", deleted.rows[0]);
+  } catch (err) {
+    next(err);
   }
 };
