@@ -20,7 +20,7 @@ export default function Transactions({ user, accounts = [] }) {
       setLoading(true);
       setError("");
       try {
-        const res = await api.get(`/transactions/insecure/${accountId}`);
+        const res = await api.get(`/transactions/${accountId}`, { withCredentials: true });
         if (res.data && res.data.success) {
           setTransactions(res.data.data || []);
         } else {

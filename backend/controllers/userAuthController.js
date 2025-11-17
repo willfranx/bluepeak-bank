@@ -339,9 +339,12 @@ export const logout = async (req, res) => {
 
 // User profile is protected and returns info for only logged in users
 export const profile = async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ success: false, message: "Not authenticated" });
+  }
   try {
     sendResponse(res, 200, "User profile", req.user);
   } catch (error) {
-    next(err);
+    next(error);
   }
 }
