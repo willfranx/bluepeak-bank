@@ -9,6 +9,7 @@ import userAuthRoutes from "./routes/userAuthRoutes.js"
 import transactionRoutes from "./routes/transactionRoutes.js"
 import pool from "./db.js";
 import { globalErrorHandler } from "./middleware/responseUtils.js";
+import { apiLimiter } from "./middleware/rateLimit.js";
 
 dotenv.config()
 
@@ -26,6 +27,9 @@ app.use(morgan("dev"));
 
 app.use(express.json());
 app.use(cookieParser())
+
+// Apply general rate limit globally
+app.use(apiLimiter)
 
 app.use(globalErrorHandler)
 
