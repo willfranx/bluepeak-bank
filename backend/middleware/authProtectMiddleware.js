@@ -1,30 +1,36 @@
-import jwt from "jsonwebtoken"
-import pool from "../db.js"
+import jwt from "jsonwebtoken";
+import pool from "../db.js";
 import { sendResponse } from "../middleware/responseUtils.js";
 
 export const protect = async (req, res, next) => {
-    try {
-
-        const token = req.cookies.token;
-
-        if (!token) {
-            return sendResponse(res, 401, "Not authorized: no token");
-        }
-
-        const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
-        const { id } = decodedToken;
-
-        const getUser = await pool.query("SELECT userid, name, email FROM users WHERE userid = $1", [id]);
-
-        if (getUser.rows.length === 0) {
-            return sendResponse(res, 401, "Not authorized: user not found")
-        }
-
-        req.user = getUser.rows[0]
-        next();
-
-    } catch (error) {
-        console.error("Auth middleware error:", error.message);
-        return sendResponse(res, 401, "Not authorized");
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith("Bearer ")) {
+      return sendResponse(res, 401, "No access token")
     }
-}
+
+    const token = authHeader.split(" ")[1];
+    const decoded = jwt.verify(token, process.env.ACCESS_SECRET)
+
+    
+    if (!decoded?.userId) {
+      return sendResponse(res, 401, "Invalid token payload")
+    }
+
+    const result = await pool.query(
+      "SELECT userid, name, email FROM users WHERE userid = $1",
+      [decoded.userId]
+    )
+
+    if (!result.rows.length) {
+      return sendResponse(res, 401, "User not found");
+    }
+
+    req.user = result.rows[0];
+    next();
+    
+  } catch (error) {
+    console.error("Auth middleware error:", error)
+    return sendResponse(res, 401, "Invalid or expired token")
+  }
+};
