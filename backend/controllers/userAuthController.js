@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken"
-import { hash, verify } from "@node-rs/argon2"
+import argon2 from "argon2";
 import pool from "../db.js";
 import { sendResponse } from "../middleware/responseUtils.js";
 import { createAccessToken, createRefreshToken } from "../authToken.js";
@@ -203,7 +203,8 @@ export const register = async (req, res) => {
           - outputLen default
           - secret null
         */
-        const passwordHash = await hash(password, {
+        const passwordHash = await argon2.hash(password, {
+          type: argon2.argon2id,
           memoryCost: 9216,
           timeCost: 4,
           parallelism: 1
@@ -309,7 +310,7 @@ export const login = async (req, res) => {
             return res.status(401).json({ success: false, message: `Login Error: no current password found for userid ${user.userid}` });
         }
 
-        const isMatch = await verify(passwordResult.rows[0].hash, password);
+        const isMatch = await argon2.verify(passwordResult.rows[0].hash, password);
 
         if (!isMatch) {
             // log the failed login attempt
@@ -402,4 +403,78 @@ export const profile = async (req, res) => {
 
     return sendResponse(res, 500, "Error fetching profile")
   }
+}
+
+
+/* Update users password
+  Must be logged in
+  Must not be locked out
+  Must reauthenticate with email and password
+*/
+export const updatePassword = async (req, res, next) => {
+
+    const { email, password, newPassword} = req.body
+
+    try {
+        // authenticate user email
+        const findUser = await pool.query(
+        "SELECT * FROM users WHERE email = $1 OR name = $1", [email]);
+
+        if (findUser.rows.length === 0) {
+            return res.status(401).json({ success: false, message: "Invalid credentials" });
+        }
+
+        const user = findUser.rows[0];
+
+        // check if the user is locked out
+        if (await isUserLocked(user.userid, user.islocked, user.lockoutend)){
+            return res.status(403).json({ success: false, message: "Account Is Locked" });
+        }
+
+        // get the current password
+        const passwordResult = await pool.query(
+            "SELECT hash FROM passwords WHERE userid = $1 AND iscurrent = true", [user.userid]
+        );
+
+        if (passwordResult.rows.length === 0) {
+            return res.status(401).json({ success: false, message: `updatePassword Error: no current password found for userid ${user.userid}` });
+        }
+
+        //authenticate password
+        const isMatch = await argon2.verify(passwordResult.rows[0].hash, password);
+
+        if (!isMatch) {
+            // log the failed attempt to authenticate
+            await logUserEvent(user.userid, "Failed Authentication");
+
+            return res.status(401).json({ success: false, message: "Invalid credentials" });
+        }
+
+        //Hash and insert the new password into passwords
+        const passwordHash = await argon2.hash(newPassword, {
+          type: argon2.argon2id,
+          memoryCost: 9216,
+          timeCost: 4,
+          parallelism: 1
+        });
+
+        const insertedPassword = await pool.query(
+            "INSERT INTO passwords (userid, hash) VALUES ($1, $2) RETURNING userid",
+            [user.userid, passwordHash]
+        );
+
+        if (insertedPassword.rows.length === 0) {
+            return res.status(500).json({ success: false, message: "Failed to add password to passwords" });
+        }
+
+        // return success response
+        return sendResponse(res, 200, "Password updated successfully.", {
+            userid: user.userid,
+            email: user.email,
+            name: user.name,
+        });
+
+    } catch (error) {
+      next(error);
+    }
 }

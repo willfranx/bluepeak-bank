@@ -15,6 +15,7 @@ This file defines tables, indexes, and triggers.
     update_users_password_updated()
     userevents_user_lock_events()
     userevents_user_creation()
+    update_current_password()
 */
 
 DROP TABLE IF EXISTS transactions CASCADE;
@@ -238,4 +239,34 @@ CREATE TRIGGER trigger_user_creation_event
     FOR EACH ROW
     EXECUTE FUNCTION userevents_user_creation();
 
+--Function auto-update passwords.iscurrent when a user updates their password
+--   Record in the userevents table
+CREATE OR REPLACE FUNCTION update_current_password()
+RETURNS TRIGGER AS $$
+DECLARE
+    password_updated_event_id int;
+BEGIN
+    --Mark the old password as iscurrent=FALSE (if there is one)
+    UPDATE passwords
+    SET iscurrent = FALSE
+    WHERE userid = NEW.userid
+        AND iscurrent = TRUE;
+
+    --Record the event in the userevents table
+    SELECT eventid INTO password_updated_event_id FROM events WHERE event = 'Password Updated';
+    IF password_updated_event_id IS NOT NULL THEN
+        INSERT INTO userevents(userid, eventid)
+        VALUES (NEW.userid, password_updated_event_id);
+    END IF;
+
+    --Allow the query to proceed
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+--Trigger update_current_password()
+Create TRIGGER trigger_update_current_password
+BEFORE INSERT ON passwords
+FOR EACH ROW
+EXECUTE FUNCTION update_current_password();
 --################# END DEFINE TRIGGERS ##################

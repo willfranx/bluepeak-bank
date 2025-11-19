@@ -1,8 +1,8 @@
 import express from "express";
-import { register, login, profile, logout, refreshAccessToken } from "../controllers/userAuthController.js";
+import { register, login, profile, logout, refreshAccessToken, updatePassword } from "../controllers/userAuthController.js";
 import { protect } from "../middleware/authProtectMiddleware.js";
 import { validate } from "../middleware/validate.js"
-import { registerSchema, loginSchema } from "../schemas/userSchema.js";
+import { registerSchema, loginSchema, updatePasswordSchema } from "../schemas/userSchema.js";
 import { loginLimiter, refreshLimiter, registerLimiter } from "../middleware/rateLimit.js";
 import { resendOTP, verifyOTP } from "../controllers/verifyController.js";
 
@@ -13,8 +13,13 @@ router.post("/register", validate({ body: registerSchema }), registerLimiter, re
 router.post("/login", validate({ body: loginSchema }), loginLimiter, login);
 router.post("/logout", protect, logout);
 router.get("/profile", protect, profile);
+<<<<<<< HEAD
+router.post("/refresh-token", refreshAccessToken);
+router.post("/updatePassword", protect, validate({ body: updatePasswordSchema}), updatePassword)
+=======
 router.post("/refresh-token", refreshLimiter, refreshAccessToken);
 router.post("/verify-otp", verifyOTP);
 router.post("/resend-otp", resendOTP);
+>>>>>>> origin/main
 
 export default router;
