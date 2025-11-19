@@ -387,3 +387,77 @@ export const profile = async (req, res) => {
     return sendResponse(res, 500, "Error fetching profile")
   }
 }
+
+
+/* Update users password
+  Must be logged in
+  Must not be locked out
+  Must reauthenticate with email and password
+*/
+export const updatePassword = async (req, res, next) => {
+
+    const { email, password, newPassword} = req.body
+
+    try {
+        // authenticate user email
+        const findUser = await pool.query(
+        "SELECT * FROM users WHERE email = $1 OR name = $1", [email]);
+
+        if (findUser.rows.length === 0) {
+            return res.status(401).json({ success: false, message: "Invalid credentials" });
+        }
+
+        const user = findUser.rows[0];
+
+        // check if the user is locked out
+        if (await isUserLocked(user.userid, user.islocked, user.lockoutend)){
+            return res.status(403).json({ success: false, message: "Account Is Locked" });
+        }
+
+        // get the current password
+        const passwordResult = await pool.query(
+            "SELECT hash FROM passwords WHERE userid = $1 AND iscurrent = true", [user.userid]
+        );
+
+        if (passwordResult.rows.length === 0) {
+            return res.status(401).json({ success: false, message: `updatePassword Error: no current password found for userid ${user.userid}` });
+        }
+
+        //authenticate password
+        const isMatch = await argon2.verify(passwordResult.rows[0].hash, password);
+
+        if (!isMatch) {
+            // log the failed attempt to authenticate
+            await logUserEvent(user.userid, "Failed Authentication");
+
+            return res.status(401).json({ success: false, message: "Invalid credentials" });
+        }
+
+        //Hash and insert the new password into passwords
+        const passwordHash = await argon2.hash(newPassword, {
+          type: argon2.argon2id,
+          memoryCost: 9216,
+          timeCost: 4,
+          parallelism: 1
+        });
+
+        const insertedPassword = await pool.query(
+            "INSERT INTO passwords (userid, hash) VALUES ($1, $2) RETURNING userid",
+            [user.userid, passwordHash]
+        );
+
+        if (insertedPassword.rows.length === 0) {
+            return res.status(500).json({ success: false, message: "Failed to add password to passwords" });
+        }
+
+        // return success response
+        return sendResponse(res, 200, "Password updated successfully.", {
+            userid: user.userid,
+            email: user.email,
+            name: user.name,
+        });
+
+    } catch (error) {
+      next(error);
+    }
+}
