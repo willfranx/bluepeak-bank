@@ -13,13 +13,9 @@ router.post("/register", validate({ body: registerSchema }), registerLimiter, re
 router.post("/login", validate({ body: loginSchema }), loginLimiter, login);
 router.post("/logout", protect, logout);
 router.get("/profile", protect, profile);
-<<<<<<< HEAD
-router.post("/refresh-token", refreshAccessToken);
 router.post("/updatePassword", protect, validate({ body: updatePasswordSchema}), updatePassword)
-=======
 router.post("/refresh-token", refreshLimiter, refreshAccessToken);
 router.post("/verify-otp", verifyOTP);
 router.post("/resend-otp", resendOTP);
->>>>>>> origin/main
 
 export default router;
