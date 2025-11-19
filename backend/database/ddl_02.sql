@@ -235,4 +235,22 @@ CREATE TRIGGER trigger_user_creation_event
     FOR EACH ROW
     EXECUTE FUNCTION userevents_user_creation();
 
+--Function auto-update passwords.iscurrent when a user updates their password
+CREATE OR REPLACE FUNCTION update_current_password()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE passwords
+    SET iscurrent = FALSE
+    WHERE userid = NEW.userid
+        AND iscurrent = TRUE;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+--Trigger update_current_password()
+Create TRIGGER trigger_update_current_password
+BEFORE INSERT ON passwords
+FOR EACH ROW
+EXECUTE FUNCTION update_current_password();
 --################# END DEFINE TRIGGERS ##################
