@@ -9,6 +9,8 @@ import userAuthRoutes from "./routes/userAuthRoutes.js"
 import transactionRoutes from "./routes/transactionRoutes.js"
 import pool from "./db.js";
 import { globalErrorHandler } from "./middleware/responseUtils.js";
+import { apiLimiter } from "./middleware/rateLimit.js";
+import { resendOTP, verifyOTP } from "./controllers/verifyController.js";
 
 dotenv.config()
 
@@ -27,6 +29,9 @@ app.use(morgan("dev"));
 app.use(express.json());
 app.use(cookieParser())
 
+// Apply general rate limit globally
+app.use(apiLimiter)
+
 app.use(globalErrorHandler)
 
 app.get("/", (req, res) => {
@@ -42,6 +47,13 @@ app.use("/api/auth", userAuthRoutes);
 
 // Mount transaction routes at /transaction
 app.use("/api/transactions", transactionRoutes)
+
+// Mount vellication route at /verify-email
+app.post("/api/verify-email", verifyOTP);
+app.post("/api/resend-token", resendOTP);
+
+
+
 
 pool.on("connect", () => {
   console.log("Connected to Bluepeak database")
