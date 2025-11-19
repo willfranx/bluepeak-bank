@@ -3,15 +3,23 @@ import { register, login, profile, logout, refreshAccessToken, updatePassword } 
 import { protect } from "../middleware/authProtectMiddleware.js";
 import { validate } from "../middleware/validate.js"
 import { registerSchema, loginSchema, updatePasswordSchema } from "../schemas/userSchema.js";
+import { loginLimiter, refreshLimiter, registerLimiter } from "../middleware/rateLimit.js";
+import { resendOTP, verifyOTP } from "../controllers/verifyController.js";
 
 const router = express.Router();
 
 // Auth routes
-router.post("/register", validate({ body: registerSchema }), register);
-router.post("/login", validate({ body: loginSchema }), login);
+router.post("/register", validate({ body: registerSchema }), registerLimiter, register);
+router.post("/login", validate({ body: loginSchema }), loginLimiter, login);
 router.post("/logout", protect, logout);
 router.get("/profile", protect, profile);
+<<<<<<< HEAD
 router.post("/refresh-token", refreshAccessToken);
 router.post("/updatePassword", protect, validate({ body: updatePasswordSchema}), updatePassword)
+=======
+router.post("/refresh-token", refreshLimiter, refreshAccessToken);
+router.post("/verify-otp", verifyOTP);
+router.post("/resend-otp", resendOTP);
+>>>>>>> origin/main
 
 export default router;
