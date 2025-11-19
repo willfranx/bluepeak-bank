@@ -22,9 +22,9 @@ export default function Profile({ user, onUserUpdate }) {
       setLoading(true);
       setError("");
       try {
-        const res = await api.get(`/auth/profile?userId=${user.userid}`);
+        const res = await api.get(`/auth/profile`, { withCredentials: true });
         if (res.data && res.data.success) {
-          const updated = res.data.user || res.data.data || null;
+          const updated = res.data.data || res.data.user || null;
           setProfile(updated);
         } else {
           setError(res.data?.message || "Failed to load profile");

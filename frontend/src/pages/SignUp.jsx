@@ -23,16 +23,18 @@ export default function SignUp({ onLogin }) {
       const payload = { name, email, password };
       const res = await api.post("/auth/register", payload);
       const body = res.data;
-      // backend returns the created user under `data`
       if (body && body.success) {
-        const user = body.data;
-        if (!user) {
+        const payload = body.data || body;
+
+        const user = payload.user || payload;
+        if (!user || !user.userid) {
           setError("Registration succeeded but no user info returned");
           return;
         }
 
+        const createdAccounts = (payload.accounts && Array.isArray(payload.accounts)) ? payload.accounts : [];
+
         // Notify parent (login) and pass any created accounts returned by the server
-        const createdAccounts = body.accounts || [];
         if (typeof onLogin === "function") onLogin(user, createdAccounts);
 
         // Navigate to accounts page

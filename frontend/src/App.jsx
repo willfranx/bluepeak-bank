@@ -40,12 +40,12 @@ function App() {
   }, []);
 
   // Fetch accounts for the current user from backend and set state
-  const fetchAccounts = async (forUser) => {
-    if (!forUser || !forUser.userid) return;
+  const fetchAccounts = async () => {
     try {
-      const res = await api.get(`/accounts/${forUser.userid}`);
+      const res = await api.get(`/accounts`, { withCredentials: true });
       if (res.data && res.data.success) {
-        setAccounts(res.data.data || []);
+        const payload = res.data.data ?? res.data.accounts ?? res.data;
+        setAccounts(Array.isArray(payload) ? payload : []);
       } else {
         console.warn("Failed to fetch accounts:", res.data?.message);
       }
@@ -54,28 +54,45 @@ function App() {
     }
   };
 
-  const login = (user) => {
+  // initialAccounts array will load user name in navbar and profile information
+  // right away after account registration
+  const login = (user, initialAccounts) => {
     setUser(user);
     try {
       window.localStorage.setItem("bluepeak_user", JSON.stringify(user));
     } catch (err) {
       console.warn("Failed to persist user to localStorage", err);
     }
-    // load user's real accounts after login
-    fetchAccounts(user);
-  };
 
-  const logout = () => {
-    setUser(null);
-    try {
-      window.localStorage.removeItem("bluepeak_user");
-    } catch (err) {
-      /* ignore */
+    if (Array.isArray(initialAccounts) && initialAccounts.length > 0) {
+      setAccounts(initialAccounts);
+    } else {
+      // load user's real accounts after login
+      fetchAccounts();
     }
   };
 
+  const logout = () => {
+    (async () => {
+      try {
+        await api.post(`/auth/logout`, {}, { withCredentials: true });
+      } catch (err) {
+        console.warn("Logout request failed", err?.response?.data || err.message || err);
+      }
+
+      // Clear local client state regardless of backend response
+      setUser(null);
+      setAccounts([]);
+      try {
+        window.localStorage.removeItem("bluepeak_user");
+      } catch (err) {
+        /* ignore */
+      }
+    })();
+  };
+
   const transfer = async (_payload = {}) => {
-    if (user) await fetchAccounts(user);
+    if (user) await fetchAccounts();
   };
 
   return (
