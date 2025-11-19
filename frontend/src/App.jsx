@@ -24,19 +24,20 @@ function App() {
 
   // Restore persisted user from localStorage (simple client-side persistence for dev)
   useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem("bluepeak_user");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed && parsed.userid) {
-          setUser(parsed);
+    // Try to restore session by asking the backend for profile. Backend uses httpOnly cookies.
+    (async () => {
+      try {
+        const res = await api.get("/auth/profile");
+        if (res.data && res.data.success) {
+          const profile = res.data.data;
+          setUser(profile);
           // load accounts for restored user
-          fetchAccounts(parsed);
+          fetchAccounts();
         }
+      } catch (err) {
+        // Not authenticated or error - start unauthenticated
       }
-    } catch (err) {
-      console.warn("Failed to restore user from localStorage", err);
-    }
+    })();
   }, []);
 
   // Fetch accounts for the current user from backend and set state
@@ -57,12 +58,8 @@ function App() {
   // initialAccounts array will load user name in navbar and profile information
   // right away after account registration
   const login = (user, initialAccounts) => {
+    // Keep user in memory only (no localStorage). Backend stores tokens in httpOnly cookies.
     setUser(user);
-    try {
-      window.localStorage.setItem("bluepeak_user", JSON.stringify(user));
-    } catch (err) {
-      console.warn("Failed to persist user to localStorage", err);
-    }
 
     if (Array.isArray(initialAccounts) && initialAccounts.length > 0) {
       setAccounts(initialAccounts);
@@ -83,11 +80,7 @@ function App() {
       // Clear local client state regardless of backend response
       setUser(null);
       setAccounts([]);
-      try {
-        window.localStorage.removeItem("bluepeak_user");
-      } catch (err) {
-        /* ignore */
-      }
+      // no persisted user to remove; tokens are httpOnly cookies cleared by backend
     })();
   };
 

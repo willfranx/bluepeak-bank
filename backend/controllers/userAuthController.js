@@ -245,13 +245,14 @@ export const register = async (req, res) => {
         const accessToken = createAccessToken(userid);
         const refreshToken = createRefreshToken(userid);
 
+        // Set httpOnly cookies for access and refresh tokens so frontend doesn't store them
+        res.cookie("token", accessToken, cookieOptions);
         res.cookie("refreshToken", refreshToken, refreshCookieOptions);
 
         // Return created user and created accounts so frontend can use them immediately
         sendResponse(res, 201, "User added successfully!", {
           user: newUser.rows[0],
-          accounts: [defaultChecking.rows[0], defaultSavings.rows[0]],
-          accessToken
+          accounts: [defaultChecking.rows[0], defaultSavings.rows[0]]
         })
 
     } catch (error) {
@@ -304,16 +305,17 @@ export const login = async (req, res) => {
         const accessToken = createAccessToken(user.userid);
         const refreshToken = createRefreshToken(user.userid);
 
+        // Set httpOnly cookies for tokens
+        res.cookie("token", accessToken, cookieOptions);
         res.cookie("refreshToken", refreshToken, refreshCookieOptions);
 
         // log the successful login
         await logUserEvent(user.userid, "Successful Authentication");
 
         sendResponse(res, 200, `Welcome ${user.name}`, {
-            userid: user.userid,
-            name: user.name,
-            email: user.email,
-            accessToken
+          userid: user.userid,
+          name: user.name,
+          email: user.email
         })
 
     } catch (error) {
@@ -337,7 +339,10 @@ export const refreshAccessToken = async (req, res) => {
 
     const newAccessToken = createAccessToken(decoded.userid)
 
-    return sendResponse(res, 200, "New access token issued", { accessToken: newAccessToken })
+    // set new access token as httpOnly cookie
+    res.cookie("token", newAccessToken, cookieOptions);
+
+    return sendResponse(res, 200, "New access token issued")
 
   } catch (error) {
     
