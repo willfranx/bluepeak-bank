@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken"
-import { hash, verify } from "@node-rs/argon2"
+import argon2 from "argon2";
 import pool from "../db.js";
 import { sendResponse } from "../middleware/responseUtils.js";
 import { createAccessToken, createRefreshToken } from "../authToken.js";
@@ -199,7 +199,8 @@ export const register = async (req, res) => {
           - outputLen default
           - secret null
         */
-        const passwordHash = await hash(password, {
+        const passwordHash = await argon2.hash(password, {
+          type: argon2.argon2id,
           memoryCost: 9216,
           timeCost: 4,
           parallelism: 1
@@ -292,7 +293,7 @@ export const login = async (req, res) => {
             return res.status(401).json({ success: false, message: `Login Error: no current password found for userid ${user.userid}` });
         }
 
-        const isMatch = await verify(passwordResult.rows[0].hash, password);
+        const isMatch = await argon2.verify(passwordResult.rows[0].hash, password);
 
         if (!isMatch) {
             // log the failed login attempt
