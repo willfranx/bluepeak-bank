@@ -3,6 +3,9 @@ import { hash, verify } from "@node-rs/argon2"
 import pool from "../db.js";
 import { sendResponse } from "../middleware/responseUtils.js";
 import { createAccessToken, createRefreshToken } from "../authToken.js";
+import crypto from 'crypto'
+import { sendOTPEmail } from "../utils/mailer.js";
+import { generateOTP } from "../utils/opt.js";
 
 const cookieOptions = {
   httpOnly: true,
@@ -17,6 +20,7 @@ const refreshCookieOptions = {
   sameSite: "Lax",
   maxAge: 24 * 60 * 60 * 1000, // 1 day
 };
+
 
 // Check if the user already exists and return true if exists
 const userCheck = async (email) => {
@@ -204,14 +208,19 @@ export const register = async (req, res) => {
           timeCost: 4,
           parallelism: 1
         });
+
+        // Generate OTP and insert in DB
+        const otp = generateOTP()
+        const otpExpires = new Date(Date.now() + 10 * 60 * 1000)
         
         // insert to users and passwords are commited together. roll back if error.
         await pool.query("BEGIN");
+
         
         // insert user into users table
         const newUser = await pool.query(
-            "INSERT INTO users (name, email) VALUES ($1, $2) RETURNING userid, name, email",
-            [name, email]
+            "INSERT INTO users (name, email, isverified, emailotp, emailotpexpires) VALUES ($1, $2, false, $3, $4) RETURNING userid, name, email",
+            [name, email, otp, otpExpires]
         );
 
         const userid = newUser.rows[0].userid;
@@ -238,6 +247,7 @@ export const register = async (req, res) => {
           [userid, `Savings ${userid}`, 'saving', savingsBalance]
         );
 
+        // Send OTP email
         // commit the whole transaction (user, password, accounts)
         await pool.query("COMMIT");
 
@@ -248,11 +258,14 @@ export const register = async (req, res) => {
         res.cookie("refreshToken", refreshToken, refreshCookieOptions);
 
         // Return created user and created accounts so frontend can use them immediately
-        sendResponse(res, 201, "User added successfully!", {
-          user: newUser.rows[0],
-          accounts: [defaultChecking.rows[0], defaultSavings.rows[0]],
-          accessToken
-        })
+
+        // Send OTP email
+        const optSent = await sendOTPEmail(email, otp)
+        if (!optSent) {
+          console.warn(`Failed to send OTP to ${email}`)
+        }
+
+        return sendResponse(res, 201, "User registered. Verify OTP sent to email.")
 
     } catch (error) {
         // rollback the user and password commits if there was an error
@@ -277,6 +290,10 @@ export const login = async (req, res) => {
         }
 
         const user = findUser.rows[0];
+
+        if (!user.isverified) {
+          return sendResponse(res, 403, "Please verify your email first")
+        }
 
         // check if the user is locked out
         if (await isUserLocked(user.userid, user.islocked, user.lockoutend)){

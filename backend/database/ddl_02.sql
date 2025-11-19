@@ -31,6 +31,9 @@ CREATE TABLE IF NOT EXISTS users (
     userid SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     email VARCHAR(60) UNIQUE NOT NULL,
+    emailotp VARCHAR(10),
+    emailotpexpires TIMESTAMP,
+    isverified BOOLEAN DEFAULT FALSE,
     emailverified BOOLEAN DEFAULT FALSE,
     phonenumber VARCHAR(16) UNIQUE
         --Enforce international phone numbers (E.164 format).
