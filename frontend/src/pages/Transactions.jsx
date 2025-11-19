@@ -20,12 +20,15 @@ export default function Transactions({ user, accounts = [] }) {
       setLoading(true);
       setError("");
       try {
-        const res = await api.get(`/transactions/${accountId}`, { withCredentials: true });
-        if (res.data && res.data.success) {
-          setTransactions(res.data.data || []);
-        } else {
-          setError(res.data?.message || "Failed to load transactions");
-        }
+          const res = await api.get(`/transactions`, { withCredentials: true });
+          if (res.data && res.data.success) {
+            const all = res.data.data || [];
+            // filter transactions to the selected account
+            const filtered = all.filter(t => String(t.srcid) === String(accountId) || String(t.desid) === String(accountId));
+            setTransactions(filtered);
+          } else {
+            setError(res.data?.message || "Failed to load transactions");
+          }
       } catch (err) {
         setError(err.response?.data?.message || err.message || "Error");
       } finally {
@@ -72,8 +75,8 @@ export default function Transactions({ user, accounts = [] }) {
               <tr className="border-b border-gray-700">
                 <th className="py-2">ID</th>
                 <th className="py-2">Type</th>
-                <th className="py-2">Source (acct type)</th>
-                <th className="py-2">Destination (acct type)</th>
+                <th className="py-2">Source</th>
+                <th className="py-2">Destination</th>
                 <th className="py-2">Amount</th>
               </tr>
             </thead>

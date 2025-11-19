@@ -13,6 +13,7 @@ import Profile from "./pages/Profile";
 import SignUp from "./pages/SignUp";
 import Transactions from "./pages/Transactions";
 import Transfer from "./pages/Transfer";
+import Verify from "./pages/Verify";
 
 import NavBar from "./components/NavBar";
 import api from "./services/api";
@@ -24,28 +25,29 @@ function App() {
 
   // Restore persisted user from localStorage (simple client-side persistence for dev)
   useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem("bluepeak_user");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed && parsed.userid) {
-          setUser(parsed);
+    // Try to restore session by asking the backend for profile. Backend uses httpOnly cookies.
+    (async () => {
+      try {
+        const res = await api.get("/auth/profile");
+        if (res.data && res.data.success) {
+          const profile = res.data.data;
+          setUser(profile);
           // load accounts for restored user
-          fetchAccounts(parsed);
+          fetchAccounts();
         }
+      } catch (err) {
+        // Not authenticated or error - start unauthenticated
       }
-    } catch (err) {
-      console.warn("Failed to restore user from localStorage", err);
-    }
+    })();
   }, []);
 
   // Fetch accounts for the current user from backend and set state
-  const fetchAccounts = async (forUser) => {
-    if (!forUser || !forUser.userid) return;
+  const fetchAccounts = async () => {
     try {
-      const res = await api.get(`/accounts/${forUser.userid}`);
+      const res = await api.get(`/accounts`, { withCredentials: true });
       if (res.data && res.data.success) {
-        setAccounts(res.data.data || []);
+        const payload = res.data.data ?? res.data.accounts ?? res.data;
+        setAccounts(Array.isArray(payload) ? payload : []);
       } else {
         console.warn("Failed to fetch accounts:", res.data?.message);
       }
@@ -54,28 +56,37 @@ function App() {
     }
   };
 
-  const login = (user) => {
+  // initialAccounts array will load user name in navbar and profile information
+  // right away after account registration
+  const login = (user, initialAccounts) => {
+    // Keep user in memory only (no localStorage). Backend stores tokens in httpOnly cookies.
     setUser(user);
-    try {
-      window.localStorage.setItem("bluepeak_user", JSON.stringify(user));
-    } catch (err) {
-      console.warn("Failed to persist user to localStorage", err);
+
+    if (Array.isArray(initialAccounts) && initialAccounts.length > 0) {
+      setAccounts(initialAccounts);
+    } else {
+      // load user's real accounts after login
+      fetchAccounts();
     }
-    // load user's real accounts after login
-    fetchAccounts(user);
   };
 
   const logout = () => {
-    setUser(null);
-    try {
-      window.localStorage.removeItem("bluepeak_user");
-    } catch (err) {
-      /* ignore */
-    }
+    (async () => {
+      try {
+        await api.post(`/auth/logout`, {}, { withCredentials: true });
+      } catch (err) {
+        console.warn("Logout request failed", err?.response?.data || err.message || err);
+      }
+
+      // Clear local client state regardless of backend response
+      setUser(null);
+      setAccounts([]);
+      // no persisted user to remove; tokens are httpOnly cookies cleared by backend
+    })();
   };
 
   const transfer = async (_payload = {}) => {
-    if (user) await fetchAccounts(user);
+    if (user) await fetchAccounts();
   };
 
   return (
@@ -114,6 +125,7 @@ function App() {
                 )
               }
             />
+            <Route path="/verify" element={<Verify />} />
             <Route
               path="/accounts"
               element={

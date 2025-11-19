@@ -47,8 +47,8 @@ export default function Transfer({ accounts = [], onTransfer }) {
           return;
         }
 
-        const payload = { srcid: Number(fromId), desid: Number(toId), amount: num };
-        const res = await api.post(`/transactions/insecure/transfer`, payload);
+        const payload = { srcId: Number(fromId), desId: Number(toId), amount: num };
+        const res = await api.post(`/transactions/transfer`, payload, { withCredentials: true });
         if (res.data && res.data.success) {
           setMessage("Transfer complete");
           setAmount("");
@@ -63,12 +63,12 @@ export default function Transfer({ accounts = [], onTransfer }) {
           return;
         }
 
-        const payload = { accountid: Number(toId), amount: num };
-        const res = await api.post(`/transactions/insecure/deposit`, payload);
+        const payload = { accountId: Number(toId), amount: num };
+        const res = await api.post(`/transactions/deposit`, payload, { withCredentials: true });
         if (res.data && res.data.success) {
           setMessage("Deposit complete");
           setAmount("");
-          if (typeof onTransfer === "function") onTransfer({ type: 'deposit', accountid: Number(toId), amount: num });
+          if (typeof onTransfer === "function") onTransfer({ type: 'deposit', accountId: Number(toId), amount: num });
         } else {
           setMessage(res.data?.message || "Deposit failed");
         }
@@ -85,12 +85,12 @@ export default function Transfer({ accounts = [], onTransfer }) {
           return;
         }
 
-        const payload = { accountid: Number(fromId), amount: num };
-        const res = await api.post(`/transactions/insecure/withdraw`, payload);
+        const payload = { accountId: Number(fromId), amount: num };
+        const res = await api.post(`/transactions/withdraw`, payload, { withCredentials: true });
         if (res.data && res.data.success) {
           setMessage("Withdrawal complete");
           setAmount("");
-          if (typeof onTransfer === "function") onTransfer({ type: 'withdraw', accountid: Number(fromId), amount: num });
+          if (typeof onTransfer === "function") onTransfer({ type: 'withdraw', accountId: Number(fromId), amount: num });
         } else {
           setMessage(res.data?.message || "Withdraw failed");
         }

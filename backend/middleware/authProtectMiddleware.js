@@ -5,12 +5,24 @@ import { sendResponse } from "../middleware/responseUtils.js";
 export const protect = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith("Bearer ")) {
+    let token = null;
+
+    if (authHeader?.startsWith("Bearer ")) {
+      token = authHeader.split(" ")[1];
+    } else if (req.cookies && req.cookies.token) {
+      // allow httpOnly cookie-based access token
+      token = req.cookies.token;
+    } else {
       return sendResponse(res, 401, "No access token")
     }
 
-    const token = authHeader.split(" ")[1];
-    const decoded = jwt.verify(token, process.env.ACCESS_SECRET)
+    const accessSecret = process.env.ACCESS_SECRET;
+    if (!accessSecret) {
+      console.error("No ACCESS_SECRET configured for token verification");
+      return sendResponse(res, 500, "Server token configuration error")
+    }
+
+    const decoded = jwt.verify(token, accessSecret)
 
     
     if (!decoded?.userId) {

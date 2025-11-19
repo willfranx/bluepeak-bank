@@ -23,20 +23,20 @@ export default function SignUp({ onLogin }) {
       const payload = { name, email, password };
       const res = await api.post("/auth/register", payload);
       const body = res.data;
-      // backend returns the created user under `data`
       if (body && body.success) {
-        const user = body.data;
-        if (!user) {
+        const payload = body.data || body;
+
+        const user = payload.user || payload;
+        if (!user || !user.userid) {
           setError("Registration succeeded but no user info returned");
           return;
         }
 
-        // Notify parent (login) and pass any created accounts returned by the server
-        const createdAccounts = body.accounts || [];
-        if (typeof onLogin === "function") onLogin(user, createdAccounts);
+        const createdAccounts = (payload.accounts && Array.isArray(payload.accounts)) ? payload.accounts : [];
 
-        // Navigate to accounts page
-        navigate("/accounts");
+        // After signup, redirect the user to the verify page so they can enter
+        // the OTP emailed to them. Prefill the email via navigation state.
+        navigate("/verify", { state: { email } });
       } else {
         setError(body?.message || "Registration failed");
       }
