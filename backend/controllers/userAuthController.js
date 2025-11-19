@@ -2,18 +2,20 @@ import jwt from "jsonwebtoken"
 import { hash, verify } from "@node-rs/argon2"
 import pool from "../db.js";
 import { sendResponse } from "../middleware/responseUtils.js";
+import { createAccessToken, createRefreshToken } from "../authToken.js";
 
 const cookieOptions = {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: 'Lax',
-    maxAge: 10 * 60 * 1000 // 10 minutes
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "Lax",
+  maxAge: 10 * 60 * 1000, // 10 minutes
 };
 
-const createToken = (id) => {
-    return jwt.sign({ id }, process.env.JWT_SECRET, {
-        expiresIn: "5m" // 5 minutes
-  });
+const refreshCookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "Lax",
+  maxAge: 24 * 60 * 60 * 1000, // 1 day
 };
 
 // Check if the user already exists and return true if exists
@@ -239,20 +241,24 @@ export const register = async (req, res) => {
         // commit the whole transaction (user, password, accounts)
         await pool.query("COMMIT");
 
-        // award token for successfull account registration
-        const token = createToken(userid);
-        res.cookie("token", token, cookieOptions);
+        // Issue tokens
+        const accessToken = createAccessToken(userid);
+        const refreshToken = createRefreshToken(userid);
+
+        res.cookie("refreshToken", refreshToken, refreshCookieOptions);
 
         // Return created user and created accounts so frontend can use them immediately
         sendResponse(res, 201, "User added successfully!", {
           user: newUser.rows[0],
           accounts: [defaultChecking.rows[0], defaultSavings.rows[0]],
+          accessToken
         })
 
     } catch (error) {
         // rollback the user and password commits if there was an error
         await pool.query("ROLLBACK");
-        next(err)
+        console.error(error);
+        return sendResponse(res, 500, "Registration error");
     }
 };
 
@@ -295,8 +301,10 @@ export const login = async (req, res) => {
             return res.status(401).json({ success: false, message: "Invalid credentials" });
         }
 
-        const token = createToken(user.userid)
-        res.cookie("token", token, cookieOptions)
+        const accessToken = createAccessToken(user.userid);
+        const refreshToken = createRefreshToken(user.userid);
+
+        res.cookie("refreshToken", refreshToken, refreshCookieOptions);
 
         // log the successful login
         await logUserEvent(user.userid, "Successful Authentication");
@@ -305,43 +313,76 @@ export const login = async (req, res) => {
             userid: user.userid,
             name: user.name,
             email: user.email,
+            accessToken
         })
 
     } catch (error) {
-      next(err);
+      next(error);
     }
 }
 
 
+export const refreshAccessToken = async (req, res) => {
+
+  try {
+
+    const refreshToken = req.cookies.refreshToken
+    if (!refreshToken) return sendResponse(res, 401, "Refresh token missing")
+
+    const decoded = jwt.verify(refreshToken, process.env.REFRESH_SECRET)
+
+    const userResult = await pool.query("SELECT userid FROM users WHERE userid = $1", [decoded.userid])
+
+    if (!userResult.rows.length) return sendResponse(res, 404, "User not found")
+
+    const newAccessToken = createAccessToken(decoded.userid)
+
+    return sendResponse(res, 200, "New access token issued", { accessToken: newAccessToken })
+
+  } catch (error) {
+    
+    console.error("Refresh token error:", error)
+
+    return sendResponse(res, 403, "Invalid or expired refresh token")
+  }
+};
+
 // Logout the user 
 export const logout = async (req, res) => {
-    // Log the logout
-    try {
-      // userid is set by protect
-      const userid = req.user?.userid;
 
-      // log the logout
-      if (userid) {
-        await logUserEvent(userid, "Log Out");
-      } else {
-        console.warn("Logout: could not identify user from web token")
-      }
-      
-      // Clear the cookie and return success
-      res.cookie("token", "", { ...cookieOptions, maxAge: 0 });
-      sendResponse(res, 200, "User is logged out");
+  try {
+    const userid = req.user?.userid
+    if (userid) await logUserEvent(userid, "Log Out")
 
-    } catch (error) {
-      next(err)
-    }
+    res.cookie("token", "", { ...cookieOptions, maxAge: 0 })
+
+    res.cookie("refreshToken", "", { ...refreshCookieOptions, maxAge: 0 })
+
+    return sendResponse(res, 200, "User is logged out");
+
+  } catch (error) {
+
+    console.error("Logout error:", error)
+
+    return sendResponse(res, 500, "Logout error")
+  }
 };
+
 
 
 // User profile is protected and returns info for only logged in users
 export const profile = async (req, res) => {
+
+  if (!req.user) return sendResponse(res, 401, "Not authenticated")
+
   try {
-    sendResponse(res, 200, "User profile", req.user);
+
+    return sendResponse(res, 200, "User profile", req.user)
+
   } catch (error) {
-    next(err);
+
+    console.error("Profile error:", error)
+
+    return sendResponse(res, 500, "Error fetching profile")
   }
 }

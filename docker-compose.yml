@@ -40,7 +40,7 @@ services:
     command: npm run dev
 
   db:
-    image: postgres:17
+    image: postgres:17.5-alpine
     container_name: bluepeak-db
     ports:
       - "5432:5432"
