@@ -13,6 +13,7 @@ import Profile from "./pages/Profile";
 import SignUp from "./pages/SignUp";
 import Transactions from "./pages/Transactions";
 import Transfer from "./pages/Transfer";
+import Verify from "./pages/Verify";
 
 import NavBar from "./components/NavBar";
 import api from "./services/api";
@@ -124,6 +125,7 @@ function App() {
                 )
               }
             />
+            <Route path="/verify" element={<Verify />} />
             <Route
               path="/accounts"
               element={

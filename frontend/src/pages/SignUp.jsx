@@ -34,11 +34,9 @@ export default function SignUp({ onLogin }) {
 
         const createdAccounts = (payload.accounts && Array.isArray(payload.accounts)) ? payload.accounts : [];
 
-        // Notify parent (login) and pass any created accounts returned by the server
-        if (typeof onLogin === "function") onLogin(user, createdAccounts);
-
-        // Navigate to accounts page
-        navigate("/accounts");
+        // After signup, redirect the user to the verify page so they can enter
+        // the OTP emailed to them. Prefill the email via navigation state.
+        navigate("/verify", { state: { email } });
       } else {
         setError(body?.message || "Registration failed");
       }
