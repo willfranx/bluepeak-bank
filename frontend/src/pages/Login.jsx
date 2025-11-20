@@ -26,7 +26,7 @@ const Login = () => {
           name: res.data.data.name,
           email: res.data.data.email,
         });
-        navigate("/profile");
+        navigate("/accounts");
       } else {
         setError(res.data.message || "Login failed");
       }

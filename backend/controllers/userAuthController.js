@@ -362,7 +362,6 @@ export const refreshAccessToken = async (req, res) => {
     // set new access token as httpOnly cookie
     res.cookie("token", newAccessToken, cookieOptions);
 
-    // also return the new access token in the response body for SPAs
     return sendResponse(res, 200, "New access token issued", { accessToken: newAccessToken });
 
   } catch (error) {
