@@ -1,24 +1,27 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useRef, useCallback } from "react";
 import api from "../services/api";
-import { useCallback } from "react";
-
-// Function to store users globally data and access token 
-// We can use it across the whole app without passing props manually 
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [auth, setAuth] = useState(null);
+  const [auth, setAuthState] = useState(null);
   const [loading, setLoading] = useState(true);
+  const tokenRef = useRef(null);
+
+  // setter wrapper that updates a sync ref so interceptors can read token synchronously
+  const setAuth = (value) => {
+    setAuthState(value);
+    tokenRef.current = value?.accessToken || null;
+  };
 
   // Refresh access token using refresh cookie
   const refreshAccessToken = useCallback(async () => {
     try {
-        const res = await api.post(
-          "/auth/refresh-token",
-          {}, // no body needed
-          { withCredentials: true } // send HTTP-only cookie
-        );
+      const res = await api.post(
+        "/auth/refresh-token",
+        {}, // no body needed
+        { withCredentials: true } // send HTTP-only cookie
+      );
 
       if (res.data.success && res.data.data?.accessToken) {
         const { accessToken, userid, name, email } = res.data.data;
@@ -48,32 +51,35 @@ export const AuthProvider = ({ children }) => {
       if (auth?.accessToken) {
         refreshAccessToken();
       }
-      // refresh before 1-min expiry
-    }, 50 * 1000); 
+    }, 50 * 1000);
 
     return () => clearInterval(interval);
   }, [auth?.accessToken, refreshAccessToken]);
 
-  // Sync Authorization header on the shared `api` instance whenever auth changes
+  // Install a single request interceptor which reads the latest token from `tokenRef`
+  // This avoids races when auth changes and ensures each request picks up the current token.
   useEffect(() => {
-    if (auth?.accessToken) {
-      api.defaults.headers.common.Authorization = `Bearer ${auth.accessToken}`;
-    } else {
-      // remove header when not authenticated
-      if (api.defaults.headers.common?.Authorization) {
-        delete api.defaults.headers.common.Authorization;
-      }
-    }
-  }, [auth]);
+    const reqInterceptor = api.interceptors.request.use(
+      (config) => {
+        const token = tokenRef.current;
+        if (token) {
+          config.headers = config.headers || {};
+          config.headers.Authorization = `Bearer ${token}`;
+        } else if (config.headers && config.headers.Authorization) {
+          delete config.headers.Authorization;
+        }
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
 
-  // Helper to clear auth and remove Authorization header
-  const clearAuth = () => {
-    setAuth(null);
-    if (api.defaults.headers.common?.Authorization) delete api.defaults.headers.common.Authorization;
-  };
+    return () => {
+      api.interceptors.request.eject(reqInterceptor);
+    };
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ auth, setAuth, loading, refreshAccessToken, clearAuth }}>
+    <AuthContext.Provider value={{ auth, setAuth, loading, refreshAccessToken }}>
       {children}
     </AuthContext.Provider>
   );

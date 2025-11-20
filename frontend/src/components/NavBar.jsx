@@ -4,16 +4,13 @@ import { useAuth } from "../context/AuthContext";
 import logo from "../assets/logo.svg";
 
 const NavBar = () => {
-  const { auth, setAuth, clearAuth, loading } = useAuth();
+  const { auth, setAuth, loading } = useAuth();
   const navigate = useNavigate();
 
   const handleLogOut = async () => {
     try {
       const res = await api.post("/auth/logout");
       if (res.data.success) {
-        // clear frontend auth state and any Authorization header
-        if (typeof clearAuth === "function") clearAuth();
-        // fallback: use setAuth if provided
         if (typeof setAuth === "function") setAuth(null);
         navigate("/login");
       }
