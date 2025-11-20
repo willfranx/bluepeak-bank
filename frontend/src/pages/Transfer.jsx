@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from "react";
 import api from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 export default function Transfer({ accounts = [], onTransfer }) {
+  const { loading } = useAuth();
+  const [accountsState, setAccountsState] = useState(accounts || []);
 
   const [action, setAction] = useState("transfer"); // transfer, deposit, withdraw
   const [fromId, setFromId] = useState("");
@@ -9,14 +12,29 @@ export default function Transfer({ accounts = [], onTransfer }) {
   const [recipientEmail, setRecipientEmail] = useState("");
   const [amount, setAmount] = useState("");
   const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    // start selects on the placeholder
     setFromId("");
     setToId("");
     setRecipientEmail("");
-  }, [accounts]);
+  }, [accountsState]);
+
+  useEffect(() => {
+    if (loading) return;
+    const fetchAccounts = async () => {
+      try {
+        const res = await api.get(`/accounts`);
+        if (res.data && res.data.success) {
+          setAccountsState(res.data.data || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch accounts for Transfer:", err);
+      }
+    };
+
+    if (!accounts || accounts.length === 0) fetchAccounts();
+  }, [loading]);
 
   const send = async (e) => {
     e.preventDefault();
@@ -28,99 +46,106 @@ export default function Transfer({ accounts = [], onTransfer }) {
       return;
     }
 
+    if (action === "transfer") {
+      if (!fromId || !toId) {
+        setMessage("Please pick source and destination accounts");
+        return;
+      }
+      if (String(fromId) === String(toId)) {
+        setMessage("Cannot transfer to the same account");
+        return;
+      }
+      const from = accountsState.find((a) => String(a.accountid) === String(fromId));
+      if (!from || Number(from.balance) < num) {
+        setMessage("Insufficient funds");
+        return;
+      }
+    }
+
+    if (action === "deposit" && !toId) {
+      setMessage("Please pick a destination account");
+      return;
+    }
+
+    if (action === "withdraw") {
+      if (!fromId) {
+        setMessage("Please pick a source account");
+        return;
+      }
+      const from = accountsState.find((a) => String(a.accountid) === String(fromId));
+      if (!from || Number(from.balance) < num) {
+        setMessage("Insufficient funds");
+        return;
+      }
+    }
+
+    if (action === 'transfer-user') {
+      if (!fromId || !recipientEmail) {
+        setMessage('Please pick a source account and enter recipient email');
+        return;
+      }
+      const from = accountsState.find((a) => String(a.accountid) === String(fromId));
+      if (!from || Number(from.balance) < num) {
+        setMessage('Insufficient funds');
+        return;
+      }
+      const email = recipientEmail.trim();
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        setMessage('Please enter a valid recipient email');
+        return;
+      }
+    }
+
     try {
-      setLoading(true);
+      setSubmitting(true);
 
       if (action === "transfer") {
-        if (!fromId || !toId) {
-          setMessage("Please pick source and destination accounts");
-          return;
-        }
-        if (String(fromId) === String(toId)) {
-          setMessage("Cannot transfer to the same account");
-          return;
-        }
-
-        const from = accounts.find(a => String(a.accountid) === String(fromId));
-        if (!from || Number(from.balance) < num) {
-          setMessage("Insufficient funds");
-          return;
-        }
-
         const payload = { srcId: Number(fromId), desId: Number(toId), amount: num };
-        const res = await api.post(`/transactions/transfer`, payload, { withCredentials: true });
+        const res = await api.post(`/transactions/transfer`, payload);
         if (res.data && res.data.success) {
           setMessage("Transfer complete");
           setAmount("");
+          setFromId("");
+          setToId("");
           if (typeof onTransfer === "function") onTransfer({ type: 'transfer', fromId: Number(fromId), toId: Number(toId), amount: num });
         } else {
           setMessage(res.data?.message || "Transfer failed");
         }
 
       } else if (action === "deposit") {
-        if (!toId) {
-          setMessage("Please pick a destination account");
-          return;
-        }
-
         const payload = { accountId: Number(toId), amount: num };
-        const res = await api.post(`/transactions/deposit`, payload, { withCredentials: true });
+        const res = await api.post(`/transactions/deposit`, payload);
         if (res.data && res.data.success) {
           setMessage("Deposit complete");
           setAmount("");
+          setToId("");
           if (typeof onTransfer === "function") onTransfer({ type: 'deposit', accountId: Number(toId), amount: num });
         } else {
           setMessage(res.data?.message || "Deposit failed");
         }
 
       } else if (action === "withdraw") {
-        if (!fromId) {
-          setMessage("Please pick a source account");
-          return;
-        }
-
-        const from = accounts.find(a => String(a.accountid) === String(fromId));
-        if (!from || Number(from.balance) < num) {
-          setMessage("Insufficient funds");
-          return;
-        }
-
         const payload = { accountId: Number(fromId), amount: num };
-        const res = await api.post(`/transactions/withdraw`, payload, { withCredentials: true });
+        const res = await api.post(`/transactions/withdraw`, payload);
         if (res.data && res.data.success) {
           setMessage("Withdrawal complete");
           setAmount("");
+          setFromId("");
           if (typeof onTransfer === "function") onTransfer({ type: 'withdraw', accountId: Number(fromId), amount: num });
         } else {
           setMessage(res.data?.message || "Withdraw failed");
         }
-      }
 
-      else if (action === 'transfer-user') {
-        // transfer to a user identified by email (recipientEmail holds the email)
-        if (!fromId || !recipientEmail) {
-          setMessage('Please pick a source account and enter recipient email');
-          return;
-        }
-
-        const from = accounts.find(a => String(a.accountid) === String(fromId));
-        if (!from || Number(from.balance) < num) {
-          setMessage('Insufficient funds');
-          return;
-        }
-
+      } else if (action === 'transfer-user') {
         const email = recipientEmail.trim();
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-          setMessage('Please enter a valid recipient email');
-          return;
-        }
-
         const payload = { srcid: Number(fromId), toUserEmail: email, amount: num };
         const res = await api.post(`/transactions/insecure/transfer-to-user`, payload);
         if (res.data && res.data.success) {
           setMessage('Transfer to user complete');
           setAmount('');
+          setFromId("");
+          setRecipientEmail('');
           if (typeof onTransfer === 'function') onTransfer({ type: 'transfer-user', fromId: Number(fromId), toUserEmail: email, amount: num });
         } else {
           setMessage(res.data?.message || 'Transfer failed');
@@ -130,7 +155,7 @@ export default function Transfer({ accounts = [], onTransfer }) {
     } catch (err) {
       setMessage(err.response?.data?.message || err.message || "Transaction error");
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
@@ -165,7 +190,7 @@ export default function Transfer({ accounts = [], onTransfer }) {
                 className="w-full px-3 py-2 border border-gray-700 rounded-md bg-gray-900 text-gray-100"
               >
                 <option value="">-- select account --</option>
-                {accounts.map((a) => {
+                {accountsState.map((a) => {
                   const id = a.accountid;
                   const label = a.type || `Account ${id}`;
                   return (
@@ -185,7 +210,7 @@ export default function Transfer({ accounts = [], onTransfer }) {
                 className="w-full px-3 py-2 border border-gray-700 rounded-md bg-gray-900 text-gray-100"
               >
                 <option value="">-- select account --</option>
-                {accounts.map((a) => {
+                {accountsState.map((a) => {
                   const id = a.accountid;
                   const label = a.type || `Account ${id}`;
                   return (
@@ -219,12 +244,12 @@ export default function Transfer({ accounts = [], onTransfer }) {
           </div>
 
           <div>
-            <button
+              <button
               className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
               type="submit"
-              disabled={loading}
+                disabled={submitting}
             >
-              {loading
+              {submitting
                 ? "Processing…"
                 : action === 'transfer'
                 ? 'Send Transfer'

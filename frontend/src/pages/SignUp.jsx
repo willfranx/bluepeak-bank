@@ -18,6 +18,9 @@ export default function SignUp({ onLogin }) {
       return;
     }
 
+    setName(name.trim());
+    setEmail(email.trim());
+    
     setLoading(true);
     try {
       const payload = { name, email, password };

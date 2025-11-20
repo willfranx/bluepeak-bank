@@ -1,48 +1,93 @@
 import React, { useEffect, useState } from "react";
 import api from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
-export default function Transactions({ user, accounts = [] }) {
-  const [accountId, setAccountId] = useState(accounts[0]?.accountid || "");
+export default function Transactions({ accounts = [] }) {
+  const { auth, loading } = useAuth();
+  const [accountsState, setAccountsState] = useState(accounts || []);
+  const [accountId, setAccountId] = useState("");
   const [transactions, setTransactions] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loadingAccounts, setLoadingAccounts] = useState(false);
+  const [loadingTx, setLoadingTx] = useState(false);
   const [error, setError] = useState("");
 
+  // Fetch accounts when auth is ready
   useEffect(() => {
-    if (accounts && accounts.length && !accountId) {
-      setAccountId(accounts[0].accountid || accounts[0].id || "");
-    }
-  }, [accounts]);
+    if (loading) return;
+    const fetchAccounts = async () => {
+      setLoadingAccounts(true);
+      try {
+        const res = await api.get(`/accounts`);
+        if (res.data && res.data.success) {
+          const list = res.data.data || [];
+          setAccountsState(list);
+          if (!accountId && list.length) setAccountId(list[0].accountid || list[0].id || "");
+        }
+      } catch (err) {
+        console.error("Failed to fetch accounts for transactions:", err);
+      } finally {
+        setLoadingAccounts(false);
+      }
+    };
 
+    fetchAccounts();
+  }, [loading]);
+
+  // Fetch transactions when accountId is selected
   useEffect(() => {
+    if (loading) return;
     if (!accountId) return;
 
     const fetchTransactions = async () => {
-      setLoading(true);
+      setLoadingTx(true);
       setError("");
       try {
-          const res = await api.get(`/transactions`, { withCredentials: true });
-          if (res.data && res.data.success) {
-            const all = res.data.data || [];
-            // filter transactions to the selected account
-            const filtered = all.filter(t => String(t.srcid) === String(accountId) || String(t.desid) === String(accountId));
-            setTransactions(filtered);
-          } else {
-            setError(res.data?.message || "Failed to load transactions");
-          }
+        const res = await api.get(`/transactions`, { withCredentials: true });
+        if (res.data && res.data.success) {
+          const all = res.data.data || [];
+          const filtered = all.filter(
+            (t) => String(t.srcid) === String(accountId) || String(t.desid) === String(accountId)
+          );
+          setTransactions(filtered);
+        } else {
+          setError(res.data?.message || "Failed to load transactions");
+          setTransactions([]);
+        }
       } catch (err) {
         setError(err.response?.data?.message || err.message || "Error");
+        setTransactions([]);
       } finally {
-        setLoading(false);
+        setLoadingTx(false);
       }
     };
 
     fetchTransactions();
-  }, [accountId]);
+  }, [accountId, loading]);
 
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">Please sign in to view transactions.</div>
-    );
+  // Helpers for display
+  const formatTime = (t) => {
+    const timeVal = t?.completetime || t?.created || t?.approvedtime;
+    if (!timeVal) return "-";
+    try {
+      return new Date(timeVal).toLocaleString();
+    } catch (e) {
+      return String(timeVal);
+    }
+  };
+
+  const capitalize = (s) => {
+    if (!s && s !== "") return "-";
+    const str = String(s || "").trim();
+    if (!str) return "-";
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  };
+
+  if (loading || loadingAccounts) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
+
+  if (!auth) {
+    return <div className="min-h-screen flex items-center justify-center">Please sign in to view transactions.</div>;
   }
 
   return (
@@ -56,8 +101,8 @@ export default function Transactions({ user, accounts = [] }) {
               onChange={(e) => setAccountId(e.target.value)}
               className="px-3 py-2 rounded-md bg-gray-900 text-gray-100"
             >
-              {accounts.map((a) => (
-                <option key={a.accountid} value={a.accountid}>
+              {accountsState.map((a) => (
+                <option key={a.accountid || a.id} value={a.accountid || a.id}>
                   {a.type || `Account ${a.accountid || a.id}`} (${Number(a.balance || 0).toFixed(2)})
                 </option>
               ))}
@@ -65,7 +110,7 @@ export default function Transactions({ user, accounts = [] }) {
           </div>
         </div>
 
-        {loading ? (
+        {loadingTx ? (
           <div className="text-sm text-gray-300">Loading…</div>
         ) : error ? (
           <div className="text-sm text-red-400">{error}</div>
@@ -73,7 +118,7 @@ export default function Transactions({ user, accounts = [] }) {
           <table className="w-full text-left text-sm text-gray-200">
             <thead>
               <tr className="border-b border-gray-700">
-                <th className="py-2">ID</th>
+                <th className="py-2">Time</th>
                 <th className="py-2">Type</th>
                 <th className="py-2">Source</th>
                 <th className="py-2">Destination</th>
@@ -83,27 +128,24 @@ export default function Transactions({ user, accounts = [] }) {
             <tbody>
               {transactions.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="py-4 text-center text-gray-400">
+                  <td colSpan={5} className="py-4 text-center text-gray-400">
                     No transactions for this account.
                   </td>
                 </tr>
               )}
 
               {transactions.map((t) => {
-                // Prefer the account types returned by the API (src_type/des_type). If missing,
-                // fall back to looking up the account in the provided `accounts` prop.
-                const srcAcc = accounts.find(a => String(a.accountid) === String(t.srcid));
-                const desAcc = accounts.find(a => String(a.accountid) === String(t.desid));
-                const srcType = t.src_type || (srcAcc && srcAcc.type) || '-';
-                const desType = t.des_type || (desAcc && desAcc.type) || '-';
-                // If the source is the system account (id=1) show the transaction type instead
+                const srcAcc = accountsState.find((a) => String(a.accountid || a.id) === String(t.srcid));
+                const desAcc = accountsState.find((a) => String(a.accountid || a.id) === String(t.desid));
+                const srcType = t.src_type || (srcAcc && srcAcc.type) || "-";
+                const desType = t.des_type || (desAcc && desAcc.type) || "-";
                 const SYS_ID = 1;
-                const srcLabel = Number(t.srcid) === SYS_ID ? (t.type || '-') : `${t.srcid} (${srcType})`;
-                const desLabel = Number(t.desid) === SYS_ID ? (t.type || '-') : `${t.desid} (${desType})`;
+                const srcLabel = Number(t.srcid) === SYS_ID ? capitalize(t.type) : capitalize(srcType);
+                const desLabel = Number(t.desid) === SYS_ID ? capitalize(t.type) : capitalize(desType);
                 return (
                   <tr key={t.transactionid} className="border-b border-gray-700">
-                    <td className="py-2">{t.transactionid}</td>
-                    <td className="py-2">{t.type || '-'} </td>
+                    <td className="py-2">{formatTime(t)}</td>
+                    <td className="py-2">{capitalize(t.type)}</td>
                     <td className="py-2">{srcLabel}</td>
                     <td className="py-2">{desLabel}</td>
                     <td className="py-2">${Number(t.amount).toFixed(2)}</td>
