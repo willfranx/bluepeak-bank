@@ -25,13 +25,13 @@ export const protect = async (req, res, next) => {
     const decoded = jwt.verify(token, accessSecret)
 
     
-    if (!decoded?.userId) {
+    if (!decoded?.userid) {
       return sendResponse(res, 401, "Invalid token payload")
     }
 
     const result = await pool.query(
       "SELECT userid, name, email FROM users WHERE userid = $1",
-      [decoded.userId]
+      [decoded.userid]
     )
 
     if (!result.rows.length) {
