@@ -54,8 +54,26 @@ export const AuthProvider = ({ children }) => {
     return () => clearInterval(interval);
   }, [auth?.accessToken, refreshAccessToken]);
 
+  // Sync Authorization header on the shared `api` instance whenever auth changes
+  useEffect(() => {
+    if (auth?.accessToken) {
+      api.defaults.headers.common.Authorization = `Bearer ${auth.accessToken}`;
+    } else {
+      // remove header when not authenticated
+      if (api.defaults.headers.common?.Authorization) {
+        delete api.defaults.headers.common.Authorization;
+      }
+    }
+  }, [auth]);
+
+  // Helper to clear auth and remove Authorization header
+  const clearAuth = () => {
+    setAuth(null);
+    if (api.defaults.headers.common?.Authorization) delete api.defaults.headers.common.Authorization;
+  };
+
   return (
-    <AuthContext.Provider value={{ auth, setAuth, loading, refreshAccessToken }}>
+    <AuthContext.Provider value={{ auth, setAuth, loading, refreshAccessToken, clearAuth }}>
       {children}
     </AuthContext.Provider>
   );
