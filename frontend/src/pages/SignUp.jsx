@@ -24,19 +24,13 @@ export default function SignUp({ onLogin }) {
       const res = await api.post("/auth/register", payload);
       const body = res.data;
       if (body && body.success) {
-        const payload = body.data || body;
-
-        const user = payload.user || payload;
-        if (!user || !user.userid) {
-          setError("Registration succeeded but no user info returned");
-          return;
-        }
-
-        const createdAccounts = (payload.accounts && Array.isArray(payload.accounts)) ? payload.accounts : [];
+        // Grab server message (e.g., "User registered. Verify OTP sent to email.")
+        const serverMessage = body?.message || "Registration succeeded";
 
         // After signup, redirect the user to the verify page so they can enter
-        // the OTP emailed to them. Prefill the email via navigation state.
-        navigate("/verify", { state: { email } });
+        // the OTP emailed to them. Prefill the email and include the server
+        // message so Verify can display it.
+        navigate("/verify", { state: { email, message: serverMessage } });
       } else {
         setError(body?.message || "Registration failed");
       }

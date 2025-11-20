@@ -334,7 +334,8 @@ export const login = async (req, res) => {
         sendResponse(res, 200, `Welcome ${user.name}`, {
           userid: user.userid,
           name: user.name,
-          email: user.email
+          email: user.email,
+          accessToken: accessToken,
         })
 
     } catch (error) {
@@ -361,7 +362,8 @@ export const refreshAccessToken = async (req, res) => {
     // set new access token as httpOnly cookie
     res.cookie("token", newAccessToken, cookieOptions);
 
-    return sendResponse(res, 200, "New access token issued")
+    // also return the new access token in the response body for SPAs
+    return sendResponse(res, 200, "New access token issued", { accessToken: newAccessToken });
 
   } catch (error) {
     
