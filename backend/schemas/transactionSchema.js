@@ -21,3 +21,9 @@ export const transferSchema = z.object({
         message: "Source and destination accounts must be different",
         path: ["desId"]
 });
+
+export const transferToUserSchema = z.object({
+    srcId: z.string(),
+    desId: z.string(),   
+     amount: z.number().positive(),
+});

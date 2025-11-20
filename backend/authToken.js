@@ -1,18 +1,18 @@
 import jwt from "jsonwebtoken";
 import { randomUUID } from "crypto";
 
-export const createAccessToken = (userId) => {
+export const createAccessToken = (userid) => {
   return jwt.sign(
-    { userId },
+    { userid },
     process.env.ACCESS_SECRET,
     { expiresIn: "1m" }
   );
 };
 
-export const createRefreshToken = (userId, tokenId = randomUUID()) => {
+export const createRefreshToken = (userid, tokenId = randomUUID()) => {
   return jwt.sign(
-    { userId, tokenId },
+    { userid, tokenId },
     process.env.REFRESH_SECRET,
-    { expiresIn: "2m" }
+    { expiresIn: "5m" }
   );
 };

@@ -1,3 +1,4 @@
+import { response } from "express";
 import pool from "../db.js";
 import { sendResponse } from "../middleware/responseUtils.js";
 
@@ -164,3 +165,65 @@ export const getTransactions = async (req, res, next) => {
         next(err);
   }
 };
+
+// Functon to transfer fund to another user's account
+
+export const transferToUser = async (req, res, next) => {
+    try {
+        
+        const { srcId, desId, amount } = req.body
+        const transferAmount = Number(amount)
+
+        const scrRes = await pool.query(
+            "SELECT balance, userid FROM accounts WHERE accountid=$1",
+            [srcId]
+        )
+
+        const srcAccount = srcRes.rows[0]
+
+        if (!srcAccount || srcAccount.userid !== req.user.userid) {
+            return sendResponse(res, 403, "Not authorized to transfer from this account")
+        }
+
+        const desRes = await pool.query(
+            "SELECT balance, userid FROM accounts WHERE accountid=$1",
+            [desId]
+        )
+
+        const desAccount = desRes.rows[0]
+
+        if (!desAccount) {
+            return response(res, 404, "Destination account not found")
+        }
+
+        if (desAccount.userid === req.user.userid) {
+            return sendResponse(res, 400, "Use normal transfer for your own accounts")
+        }
+
+        if (parseFloat(srcAccount.balance) < transferAmount) {
+            return sendResponse(res, 400, "Insufficient funds")
+        }
+
+        await pool.query(
+            "UPDATE accounts SET balance = balance - $1 WHERE accountid=$2",
+            [transferAmount, srcId]
+        )
+
+        await pool.query(
+            "UPDATE accounts SET balance = balance + $1 WHERE accountid=$2",
+            [transferAmount, desId]
+        )
+
+        const transferRes = await pool.query(
+            `INSERT INTO transactions (srcid, desid, amount, type, created, approved, complete)
+            VALUES ($1, $2, $3, 'external_transfer', NOW(), true, true) RETURNING *`,
+            [srcId, desId, transferAmount]
+        )
+
+        return sendResponse(res, 201, "Transfer to user successful", transferRes.rows[0])
+
+        
+    } catch (error) {
+        next(error)
+    }
+}

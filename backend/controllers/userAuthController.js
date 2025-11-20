@@ -3,22 +3,14 @@ import argon2 from "argon2";
 import pool from "../db.js";
 import { sendResponse } from "../middleware/responseUtils.js";
 import { createAccessToken, createRefreshToken } from "../authToken.js";
-import crypto from 'crypto'
 import { sendOTPEmail } from "../utils/mailer.js";
 import { generateOTP } from "../utils/opt.js";
-
-const cookieOptions = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "Lax",
-  maxAge: 10 * 60 * 1000, // 10 minutes
-};
 
 const refreshCookieOptions = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
   sameSite: "Lax",
-  maxAge: 24 * 60 * 60 * 1000, // 1 day
+  maxAge: 5 * 60 * 1000, // 5 mins
 };
 
 
@@ -256,8 +248,6 @@ export const register = async (req, res) => {
         const accessToken = createAccessToken(userid);
         const refreshToken = createRefreshToken(userid);
 
-        // Set httpOnly cookies for access and refresh tokens so frontend doesn't store them
-        res.cookie("token", accessToken, cookieOptions);
         res.cookie("refreshToken", refreshToken, refreshCookieOptions);
 
         // Return created user and created accounts so frontend can use them immediately
@@ -268,7 +258,10 @@ export const register = async (req, res) => {
           console.warn(`Failed to send OTP to ${email}`)
         }
 
-        return sendResponse(res, 201, "User registered. Verify OTP sent to email.")
+        return sendResponse(res, 201, "User registered. Verify OTP sent to email.", {
+          accessToken,
+          userid: newUser.rows[0].userid,
+        })
 
     } catch (error) {
         // rollback the user and password commits if there was an error
@@ -324,14 +317,13 @@ export const login = async (req, res) => {
         const accessToken = createAccessToken(user.userid);
         const refreshToken = createRefreshToken(user.userid);
 
-        // Set httpOnly cookies for tokens
-        res.cookie("token", accessToken, cookieOptions);
         res.cookie("refreshToken", refreshToken, refreshCookieOptions);
 
         // log the successful login
         await logUserEvent(user.userid, "Successful Authentication");
 
         sendResponse(res, 200, `Welcome ${user.name}`, {
+          accessToken,
           userid: user.userid,
           name: user.name,
           email: user.email
@@ -345,10 +337,10 @@ export const login = async (req, res) => {
 
 export const refreshAccessToken = async (req, res) => {
 
-  try {
+  const refreshToken = req.cookies.refreshToken
+  if (!refreshToken) return sendResponse(res, 401, "Refresh token missing")
 
-    const refreshToken = req.cookies.refreshToken
-    if (!refreshToken) return sendResponse(res, 401, "Refresh token missing")
+  try {
 
     const decoded = jwt.verify(refreshToken, process.env.REFRESH_SECRET)
 
@@ -357,11 +349,13 @@ export const refreshAccessToken = async (req, res) => {
     if (!userResult.rows.length) return sendResponse(res, 404, "User not found")
 
     const newAccessToken = createAccessToken(decoded.userid)
+    const newRefreshToken = createRefreshToken(decoded.userid)
 
-    // set new access token as httpOnly cookie
-    res.cookie("token", newAccessToken, cookieOptions);
+    res.cookie("refreshToken", newRefreshToken, refreshCookieOptions)
 
-    return sendResponse(res, 200, "New access token issued")
+    return sendResponse(res, 200, "New access token issued", {
+        accessToken: newAccessToken
+    })
 
   } catch (error) {
     
@@ -378,9 +372,12 @@ export const logout = async (req, res) => {
     const userid = req.user?.userid
     if (userid) await logUserEvent(userid, "Log Out")
 
-    res.cookie("token", "", { ...cookieOptions, maxAge: 0 })
-
-    res.cookie("refreshToken", "", { ...refreshCookieOptions, maxAge: 0 })
+    // Clear the refresh token cookie
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Lax",
+    })
 
     return sendResponse(res, 200, "User is logged out");
 
