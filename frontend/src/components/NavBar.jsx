@@ -78,10 +78,10 @@ const NavBar = () => {
         <div className="flex-none">
           {auth?.accessToken ? (
             <div className="flex items-center gap-4">
-              <span>Hi, {auth.name}</span>
+              <span>Hi, {auth?.name}</span>
               <button
                 onClick={handleLogOut}
-                className="bg-red-600 px-3 py-1 rounded hover:bg-red-700"
+                className="bg-blue-800 px-3 py-1 rounded hover:bg-red-700"
               >
                 Logout
               </button>

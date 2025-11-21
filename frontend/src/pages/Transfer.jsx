@@ -192,7 +192,7 @@ export default function Transfer({ accounts = [], onTransfer }) {
                 <option value="">-- select account --</option>
                 {accountsState.map((a) => {
                   const id = a.accountid;
-                  const label = a.type || `Account ${id}`;
+                  const label = a.name || `Account ${id}`;
                   return (
                     <option key={id} value={id}>{label} (${Number(a.balance || 0).toFixed(2)})</option>
                   );
@@ -212,7 +212,7 @@ export default function Transfer({ accounts = [], onTransfer }) {
                 <option value="">-- select account --</option>
                 {accountsState.map((a) => {
                   const id = a.accountid;
-                  const label = a.type || `Account ${id}`;
+                  const label = a.name || `Account ${id}`;
                   return (
                     <option key={id} value={id}>{label} (${Number(a.balance || 0).toFixed(2)})</option>
                   );

@@ -1,7 +1,7 @@
 import { z } from "zod"
 
 export const createAccountSchema = z.object({
-    userId: z.coerce.number().int().positive(),
+    userId: z.coerce.number().int().positive().optional(),
     name: z.string().min(1, "Account name is required"),
     accountType: z.enum(["checking", "saving"]),
     balance: z.number().nonnegative().optional(),

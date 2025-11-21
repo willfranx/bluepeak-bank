@@ -326,7 +326,7 @@ export const login = async (req, res) => {
           accessToken,
           userid: user.userid,
           name: user.name,
-          email: user.email,
+          email: user.email
         })
 
     } catch (error) {

@@ -4,10 +4,17 @@ import { sendResponse } from "../middleware/responseUtils.js";
 // Create a new account for an existing user
 export const createAccount = async (req, res, next) => {
   try {
-    const { userId, name, accountType, balance = 0 } = req.body;
+    const { name, accountType, balance = 0 } = req.body;
 
-    // Ensure logged-in user matches requested userId
-    if (req.user.userid !== userId) {
+    // Derive userId from the authenticated user instead of requiring it from the client.
+    const userId = req.user && req.user.userid;
+
+    if (!userId) {
+      return sendResponse(res, 401, "Unauthorized. Missing authenticated user.");
+    }
+
+    // If client supplied a different userId in the body, forbid that.
+    if (req.body.userId && Number(req.body.userId) !== Number(userId)) {
       return sendResponse(res, 403, "Forbidden. Cannot create accounts for another user");
     }
 
