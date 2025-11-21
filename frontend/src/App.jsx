@@ -19,6 +19,16 @@ import NavBar from "./components/NavBar";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import ProtectedRoute from "./context/ProtectedRoute";
 
+function HomeRedirect() {
+  const { auth, loading } = useAuth();
+
+  if (loading) return <div className="p-8 text-center text-gray-400">Loading…</div>;
+
+  // If we have a signed-in user, go to accounts, otherwise go to login
+  const signedIn = !!(auth && (auth.userId || auth.userid || auth.accessToken));
+  return <Navigate to={signedIn ? "/accounts" : "/login"} replace />;
+}
+
 
 function App() {
   return (
@@ -26,6 +36,7 @@ function App() {
       <AuthProvider>
         <NavBar />
         <Routes>
+          <Route path="/" element={<HomeRedirect />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/verify" element={<Verify />} />

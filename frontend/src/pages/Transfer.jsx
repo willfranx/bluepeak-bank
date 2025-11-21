@@ -140,7 +140,7 @@ export default function Transfer({ accounts = [], onTransfer }) {
       } else if (action === 'transfer-user') {
         const email = recipientEmail.trim();
         const payload = { srcid: Number(fromId), toUserEmail: email, amount: num };
-        const res = await api.post(`/transactions/insecure/transfer-to-user`, payload);
+        const res = await api.post(`/transactions/send`, payload, { withCredentials: true });
         if (res.data && res.data.success) {
           setMessage('Transfer to user complete');
           setAmount('');
