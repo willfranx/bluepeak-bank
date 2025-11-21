@@ -67,8 +67,8 @@ export default function Accounts() {
                 onSubmit={async (e) => {
                   e.preventDefault();
                   setMessage("");
+
                   const payload = {
-                    userId: auth?.userId,
                     name: addName,
                     accountType: addType,
                     balance: Number(addBalance || 0),
