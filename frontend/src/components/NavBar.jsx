@@ -22,7 +22,7 @@ const NavBar = () => {
   if (loading) return <div className="p-4">Loading...</div>;
 
   return (
-    <nav className="bg-sky-600 p-4 text-white">
+    <nav className="bg-sky-600 p-4 text-white sticky top-0 z-50">
       <div className="container mx-auto flex items-center">
         {/* Left: Brand */}
         <img

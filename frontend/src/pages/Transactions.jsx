@@ -91,7 +91,7 @@ export default function Transactions({ accounts = [] }) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center bg-white py-8 gap-6">
+    <div className="min-h-screen flex flex-col items-center justify-center py-8 gap-6 bg-white">
       <div className="bg-gray-800 rounded-lg shadow-lg p-6 max-w-3xl w-full">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-white">Transactions</h2>

@@ -160,7 +160,7 @@ export default function Transfer({ accounts = [], onTransfer }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white py-8">
+    <div className="min-h-screen flex flex-col items-center justify-center py-8 gap-6 bg-white">
       <div className="bg-gray-800 rounded-lg shadow-lg p-6 max-w-md w-full">
         <h2 className="text-xl font-semibold text-white mb-4">
           Account Actions

@@ -25,7 +25,29 @@ export const AuthProvider = ({ children }) => {
 
       if (res.data.success && res.data.data?.accessToken) {
         const { accessToken, userid, name, email } = res.data.data;
-        setAuth({ accessToken, userid, name, email });
+
+        // Temporarily set tokenRef so subsequent requests use the refreshed token
+        tokenRef.current = accessToken;
+
+        // If the refresh response included user info, use it. Otherwise fetch profile.
+        let finalUser = { userid, name, email };
+        if (!name || !userid) {
+          try {
+            const profileRes = await api.get("/auth/profile", { withCredentials: true });
+            if (profileRes.data && profileRes.data.success) {
+              finalUser = {
+                userid: profileRes.data.data.userid ?? userid,
+                name: profileRes.data.data.name ?? name,
+                email: profileRes.data.data.email ?? email,
+              };
+            }
+          } catch (err) {
+            // If fetching profile fails, continue with whatever data we have
+            console.warn("Could not fetch profile after refresh:", err);
+          }
+        }
+
+        setAuth({ accessToken, userid: finalUser.userid, name: finalUser.name, email: finalUser.email });
         return accessToken;
       } else {
         setAuth(null);

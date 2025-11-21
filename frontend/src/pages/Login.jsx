@@ -37,7 +37,7 @@ const Login = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded">
+    <div className="max-w-md mx-auto mt-10 py-8 bg-white rounded">
       <div className="p-4 flex items-center justify-center">
         <h1 className="text-2xl text-gray-900">Welcome to BluePeak Bank!</h1>
       </div>

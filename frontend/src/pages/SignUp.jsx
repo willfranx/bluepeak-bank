@@ -45,7 +45,7 @@ export default function SignUp({ onLogin }) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white py-8 gap-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white py-8 gap-6">
       <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Create an account</h2>
         <form onSubmit={submit} className="space-y-4">
