@@ -18,25 +18,22 @@ export default function SignUp({ onLogin }) {
       return;
     }
 
+    setName(name.trim());
+    setEmail(email.trim());
+    
     setLoading(true);
     try {
       const payload = { name, email, password };
       const res = await api.post("/auth/register", payload);
       const body = res.data;
       if (body && body.success) {
-        const payload = body.data || body;
-
-        const user = payload.user || payload;
-        if (!user || !user.userid) {
-          setError("Registration succeeded but no user info returned");
-          return;
-        }
-
-        const createdAccounts = (payload.accounts && Array.isArray(payload.accounts)) ? payload.accounts : [];
+        // Grab server message (e.g., "User registered. Verify OTP sent to email.")
+        const serverMessage = body?.message || "Registration succeeded";
 
         // After signup, redirect the user to the verify page so they can enter
-        // the OTP emailed to them. Prefill the email via navigation state.
-        navigate("/verify", { state: { email } });
+        // the OTP emailed to them. Prefill the email and include the server
+        // message so Verify can display it.
+        navigate("/verify", { state: { email, message: serverMessage } });
       } else {
         setError(body?.message || "Registration failed");
       }
@@ -48,7 +45,7 @@ export default function SignUp({ onLogin }) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white py-8 gap-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white py-8 gap-6">
       <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Create an account</h2>
         <form onSubmit={submit} className="space-y-4">

@@ -1,157 +1,101 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import api from "../services/api";
+import { useAuth } from "../context/AuthContext";
 import logo from "../assets/logo.svg";
 
-export default function NavBar({ user, onLogout }) {
+const NavBar = () => {
+  const { auth, setAuth, loading } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogOut = async () => {
+    try {
+      const res = await api.post("/auth/logout");
+      if (res.data.success) {
+        if (typeof setAuth === "function") setAuth(null);
+        navigate("/login");
+      }
+    } catch (err) {
+      console.error("Logout failed:", err);
+    }
+  };
+
+  if (loading) return <div className="p-4">Loading...</div>;
+
   return (
-    <nav className="border-b bg-sky-600">
-      <div className="max-w-screen-xl mx-auto px-4 py-3 flex items-center">
+    <nav className="bg-sky-600 p-4 text-white sticky top-0 z-50">
+      <div className="container mx-auto flex items-center">
+        {/* Left: Brand */}
         <img
           className="rounded-full h-8 w-auto mr-4"
           src={logo}
           alt="Bluepeak bank logo"
         />
-
-        <Link to="/" className="flex items-center space-x-3">
-          <span className="text-lg font-semibold text-white hover:text-blue-700">
+        <div className="flex-none">
+          <Link to="/" className="text-white font-bold text-lg">
             BluePeak Bank
-          </span>
-        </Link>
-
-        <div className="flex-1 flex justify-center gap-6">
-          <Link
-            to="/accounts"
-            className="flex flex-col items-center text-neutral-50 hover:text-blue-600 transition-colors"
-            aria-label="Accounts"
-          >
-            {/* simple user icon */}
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="white"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-              <circle cx="12" cy="7" r="4"></circle>
-            </svg>
-            <span className="text-sm">Accounts</span>
-          </Link>
-
-          <Link
-            to="/transactions"
-            className="flex flex-col items-center text-neutral-50 hover:text-blue-600 transition-colors"
-            aria-label="Transactions"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="white"
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 17v-6a2 2 0 012-2h6"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M20 13V7a2 2 0 00-2-2h-6"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6"
-              />
-            </svg>
-            <span className="text-sm">Transactions</span>
-          </Link>
-
-          <Link
-            to="/transfer"
-            className="flex flex-col items-center text-neutral-50 hover:text-blue-600 transition-colors"
-            aria-label="Transfer"
-          >
-            {/* simple transfer icon */}
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="white"
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 7h16M4 12h10m-6 5h6"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M20 7l-3-3m3 3l-3 3"
-              />
-            </svg>
-            <span className="text-sm">Transfer</span>
           </Link>
         </div>
 
-        {/* Right: auth actions */}
-        <div className="flex items-center gap-3 text-neutral-50">
-          {user ? (
-            <>
-              <span className="text-gray-200">Hi, {user.name || "there"}</span>
-              <Link
-                to="/profile"
-                className="flex flex-col items-center text-neutral-50 hover:text-blue-600 transition-colors"
-                aria-label="Profile"
-              >
-                {/* simple user icon */}
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="white"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="12" cy="7" r="4"></circle>
+        {/* Center: navigation links */}
+        <div className="flex-1 flex justify-center">
+          {auth?.accessToken ? (
+            <div className="flex items-center gap-4">
+              <Link to="/accounts" className="hover:text-gray-200 flex items-center gap-2">
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M4 7h16v10H4z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M4 10h16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
-                <span className="text-sm">Profile</span>
+                Accounts
               </Link>
+              <Link to="/transactions" className="hover:text-gray-200 flex items-center gap-2">
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 6v6l4 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                Transactions
+              </Link>
+              <Link to="/transfer" className="hover:text-gray-200 flex items-center gap-2">
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M3 7h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M21 17H9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M15 3l6 6-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M9 21l-6-6 6-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                Transfer
+              </Link>
+              <Link to="/profile" className="hover:text-gray-200 flex items-center gap-2">
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                Profile
+              </Link>
+            </div>
+          ) : null}
+        </div>
+
+        {/* Right: auth actions*/}
+        <div className="flex-none">
+          {auth?.accessToken ? (
+            <div className="flex items-center gap-4">
+              <span>Hi, {auth?.name}</span>
               <button
-                onClick={onLogout}
-                className="px-3 py-1 text-white rounded-md bg-gray-700 hover:text-blue-700 transition"
+                onClick={handleLogOut}
+                className="bg-blue-800 px-3 py-1 rounded hover:bg-red-700"
               >
                 Logout
               </button>
-            </>
+            </div>
           ) : (
-            <Link
-              to="/login"
-              className="px-3 py-1 text-white hover:text-blue-700"
-            >
-              Sign in
-            </Link>
+            <div className="flex gap-4">
+              <Link to="/login" className="hover:text-gray-200">Login</Link>
+              <Link to="/signup" className="hover:text-gray-200">Register</Link>
+            </div>
           )}
         </div>
       </div>
     </nav>
   );
-}
+};
+
+export default NavBar;

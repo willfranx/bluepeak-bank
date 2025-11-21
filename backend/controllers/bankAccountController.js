@@ -4,12 +4,10 @@ import { sendResponse } from "../middleware/responseUtils.js";
 // Create a new account for an existing user
 export const createAccount = async (req, res, next) => {
   try {
-    const { userId, name, accountType, balance = 0 } = req.body;
-
-    // Ensure logged-in user matches requested userId
-    if (req.user.userid !== userId) {
-      return sendResponse(res, 403, "Forbidden. Cannot create accounts for another user");
-    }
+    const { name, accountType, balance = 0 } = req.body;
+    
+    const userId = req.user?.userid;
+    if (!userId) return sendResponse(res, 401, 'Unauthorized.');
 
     // Check if user exists
     const userExists = await pool.query(
