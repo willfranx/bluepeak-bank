@@ -9,7 +9,8 @@ env:
   ACR_LOGIN_SERVER: bluepeakbank.azurecr.io
   ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
   ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
-  ACI_RESOURCE_GROUP: rg-bluepeak     
+  AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+  ACI_RESOURCE_GROUP: rg-bluepeak
   FRONTEND_PATH: ./frontend
   BACKEND_PATH: ./backend
   DB_PATH: ./db
@@ -26,9 +27,22 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20.x'
-  
-      - name: Restore frontend dependencies
-        run: npm ci
+
+      - name: Cache frontend dependencies
+        uses: actions/cache@v3
+        with:
+          path: frontend/node_modules
+          key: frontend-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: |
+            frontend-${{ runner.os }}-
+
+      - name: Install frontend dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
         working-directory: ${{ env.FRONTEND_PATH }}
 
       - name: Build frontend
@@ -41,8 +55,21 @@ jobs:
           docker login ${{ env.ACR_LOGIN_SERVER }} -u ${{ env.ACR_USERNAME }} -p ${{ env.ACR_PASSWORD }}
           docker push ${{ env.ACR_LOGIN_SERVER }}/frontend:latest
 
-      - name: Restore backend dependencies
-        run: npm ci
+      - name: Cache backend dependencies
+        uses: actions/cache@v3
+        with:
+          path: backend/node_modules
+          key: backend-${{ runner.os }}-${{ hashFiles('backend/package-lock.json') }}
+          restore-keys: |
+            backend-${{ runner.os }}-
+
+      - name: Install backend dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
         working-directory: ${{ env.BACKEND_PATH }}
 
       - name: Build backend
@@ -68,7 +95,7 @@ jobs:
       - name: Deploy / Restart ACI containers
         run: |
           echo "Deployment step: restarting containers to pick up new images"
-          az login --service-principal -u ${{ env.ACR_USERNAME }} -p ${{ env.ACR_PASSWORD }} --tenant ${{ secrets.AZURE_TENANT_ID }}
+          az login --service-principal -u ${{ env.ACR_USERNAME }} -p ${{ env.ACR_PASSWORD }} --tenant ${{ env.AZURE_TENANT_ID }}
 
           # Restart frontend container
           az container restart --name frontend --resource-group ${{ env.ACI_RESOURCE_GROUP }}
