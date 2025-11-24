@@ -1,0 +1,81 @@
+name: Publish 
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+env:
+  ACR_LOGIN_SERVER: bluepeakbank.azurecr.io
+  ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
+  ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
+  ACI_RESOURCE_GROUP: rg-bluepeak     
+  FRONTEND_PATH: ./frontend
+  BACKEND_PATH: ./backend
+  DB_PATH: ./db
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Restore frontend dependencies
+        run: npm ci
+        working-directory: ${{ env.FRONTEND_PATH }}
+
+      - name: Build frontend
+        run: npm run build
+        working-directory: ${{ env.FRONTEND_PATH }}
+
+      - name: Publish frontend Docker image
+        run: |
+          docker build -t ${{ env.ACR_LOGIN_SERVER }}/frontend:latest ${{ env.FRONTEND_PATH }}
+          docker login ${{ env.ACR_LOGIN_SERVER }} -u ${{ env.ACR_USERNAME }} -p ${{ env.ACR_PASSWORD }}
+          docker push ${{ env.ACR_LOGIN_SERVER }}/frontend:latest
+
+      - name: Restore backend dependencies
+        run: npm ci
+        working-directory: ${{ env.BACKEND_PATH }}
+
+      - name: Build backend
+        run: npm run build
+        working-directory: ${{ env.BACKEND_PATH }}
+
+      - name: Publish backend Docker image
+        run: |
+          docker build -t ${{ env.ACR_LOGIN_SERVER }}/backend:latest ${{ env.BACKEND_PATH }}
+          docker login ${{ env.ACR_LOGIN_SERVER }} -u ${{ env.ACR_USERNAME }} -p ${{ env.ACR_PASSWORD }}
+          docker push ${{ env.ACR_LOGIN_SERVER }}/backend:latest
+
+      - name: Publish Postgres Docker image
+        run: |
+          docker build -t ${{ env.ACR_LOGIN_SERVER }}/db:latest ${{ env.DB_PATH }}
+          docker login ${{ env.ACR_LOGIN_SERVER }} -u ${{ env.ACR_USERNAME }} -p ${{ env.ACR_PASSWORD }}
+          docker push ${{ env.ACR_LOGIN_SERVER }}/db:latest
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy / Restart ACI containers
+        run: |
+          echo "Deployment step: restarting containers to pick up new images"
+          az login --service-principal -u ${{ env.ACR_USERNAME }} -p ${{ env.ACR_PASSWORD }} --tenant ${{ secrets.AZURE_TENANT_ID }}
+
+          # Restart frontend container
+          az container restart --name frontend --resource-group ${{ env.ACI_RESOURCE_GROUP }}
+
+          # Restart backend container
+          az container restart --name backend --resource-group ${{ env.ACI_RESOURCE_GROUP }}
+
+          # Restart Postgres container
+          az container restart --name db --resource-group ${{ env.ACI_RESOURCE_GROUP }}
