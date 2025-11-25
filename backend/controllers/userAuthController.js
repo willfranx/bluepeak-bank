@@ -146,19 +146,24 @@ const isUserLocked = async (userid, islocked, lockoutend) => {
 
 //Record user events: returns True on success and False on failure
 const logUserEvent = async (userid, event) => {
-    try {
-    // Get the eventid 
+  try {
+    // Get the eventid
     const eventResult = await pool.query(
       "SELECT eventid FROM events WHERE event = $1",
       [event]
     );
 
+    // If the event isn't present, insert it so it can be logged
+    let eventid;
     if (eventResult.rows.length === 0) {
-      console.error(`logUserEvent: "${event}" not found`);
-      return;
+      const insert = await pool.query(
+        "INSERT INTO events (event) VALUES ($1) RETURNING eventid",
+        [event]
+      );
+      eventid = insert.rows[0].eventid;
+    } else {
+      eventid = eventResult.rows[0].eventid;
     }
-
-    const eventid = eventResult.rows[0].eventid;
 
     // record the event
     await pool.query(
@@ -167,7 +172,6 @@ const logUserEvent = async (userid, event) => {
     );
 
     return true;
-
   } catch (error) {
     console.error(`logUserEvent: logging event "${event}" for user ${userid}:`, error);
     return false;
@@ -333,6 +337,99 @@ export const login = async (req, res) => {
       next(error);
     }
 }
+
+// Update user's name and email
+export const updateUser = async (req, res) => {
+  try {
+    if (!req.user) return sendResponse(res, 401, "Not authenticated");
+
+    const userid = req.user.userid;
+    const { name, email } = req.body;
+
+    if (!name && !email) return sendResponse(res, 400, "Nothing to update");
+
+    // If email provided ensure it's not linked to another user
+    if (email) {
+      const emailCheck = await pool.query("SELECT userid FROM users WHERE email = $1 AND userid <> $2", [email, userid]);
+      if (emailCheck.rows.length > 0) return sendResponse(res, 400, "Email already in use");
+    }
+
+    // Fetch current email to detect change
+    const cur = await pool.query("SELECT email FROM users WHERE userid = $1", [userid]);
+    if (cur.rows.length === 0) return sendResponse(res, 404, "User not found");
+    const currentEmail = cur.rows[0].email;
+
+    let updated;
+    let emailChanged = false;
+
+    if (email && email !== currentEmail) {
+      // generate otp and mark unverified
+      const otp = generateOTP();
+      const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+
+      updated = await pool.query(
+        "UPDATE users SET name = COALESCE($1, name), email = $2, isverified = false, emailotp = $3, emailotpexpires = $4 WHERE userid = $5 RETURNING userid, name, email",
+        [name || null, email, otp, otpExpires, userid]
+      );
+
+      emailChanged = true;
+
+      // attempt to send OTP to new email (best-effort)
+      try {
+        const sent = await sendOTPEmail(email, otp);
+        if (!sent) console.warn(`Failed to send OTP to ${email}`);
+      } catch (err) {
+        console.error("Error sending OTP on email change:", err);
+      }
+    } else {
+      updated = await pool.query(
+        "UPDATE users SET name = COALESCE($1, name), email = COALESCE($2, email) WHERE userid = $3 RETURNING userid, name, email",
+        [name || null, email || null, userid]
+      );
+    }
+
+    if (updated.rows.length === 0) return sendResponse(res, 404, "User not found");
+
+    // log event
+    await logUserEvent(userid, "Profile Updated");
+
+    // include flag to tell frontend that email changed and verification is required
+    const respData = { ...updated.rows[0], emailChanged };
+
+    return sendResponse(res, 200, "Profile updated", respData);
+  } catch (error) {
+    console.error("updateUser error:", error);
+    return sendResponse(res, 500, "Error updating profile");
+  }
+};
+
+// Delete user account (cascades to passwords, accounts, userevents)
+export const deleteUser = async (req, res) => {
+  try {
+    if (!req.user) return sendResponse(res, 401, "Not authenticated");
+
+    const userid = req.user.userid;
+
+    // Delete the user - cascading constraints in DDL will remove related records
+    const del = await pool.query("DELETE FROM users WHERE userid = $1 RETURNING userid", [userid]);
+
+    if (del.rows.length === 0) return sendResponse(res, 404, "User not found");
+
+    await logUserEvent(userid, "Account Deleted");
+
+    // clear refresh token cookie
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Lax",
+    });
+
+    return sendResponse(res, 200, "Account deleted");
+  } catch (error) {
+    console.error("deleteUser error:", error);
+    return sendResponse(res, 500, "Error deleting account");
+  }
+};
 
 
 export const refreshAccessToken = async (req, res) => {

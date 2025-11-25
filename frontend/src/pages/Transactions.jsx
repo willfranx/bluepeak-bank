@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import ErrorMessage from "../components/ErrorMessage";
 
 export default function Transactions({ accounts = [] }) {
   const { auth, loading } = useAuth();
@@ -113,7 +114,7 @@ export default function Transactions({ accounts = [] }) {
         {loadingTx ? (
           <div className="text-sm text-gray-300">Loading…</div>
         ) : error ? (
-          <div className="text-sm text-red-400">{error}</div>
+          <ErrorMessage message={error} className="text-sm text-red-400" />
         ) : (
           <table className="w-full text-left text-sm text-gray-200">
             <thead>

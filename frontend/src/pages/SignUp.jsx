@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
+import ErrorMessage from "../components/ErrorMessage";
 
 export default function SignUp({ onLogin }) {
   const [name, setName] = useState("");
@@ -79,7 +80,7 @@ export default function SignUp({ onLogin }) {
             />
           </div>
 
-          {error && <div className="text-sm text-red-600">{error}</div>}
+          <ErrorMessage message={error} className="text-sm text-red-600" />
 
           <div>
             <button

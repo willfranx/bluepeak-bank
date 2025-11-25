@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import ErrorMessage from "../components/ErrorMessage";
 
 export default function Accounts() {
   const { loading, auth } = useAuth();
@@ -45,7 +46,7 @@ export default function Accounts() {
         {isLoading ? (
           <div className="text-sm text-gray-300">Loading accounts…</div>
         ) : error ? (
-          <div className="text-sm text-red-400">{error}</div>
+          <ErrorMessage message={error} className="text-sm text-red-400" />
         ) : accounts.length === 0 ? (
           <div className="py-4 text-center text-sm text-gray-500">No accounts to display.</div>
         ) : (

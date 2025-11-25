@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import api from "../services/api";
+import ErrorMessage from "../components/ErrorMessage";
 
 export default function Verify() {
   const location = useLocation();
@@ -84,7 +85,7 @@ export default function Verify() {
             />
           </div>
 
-          {message && <div className="text-sm text-red-600">{message}</div>}
+          {message && <ErrorMessage message={message} />}
 
           <div className="flex gap-2">
             <button

@@ -4,6 +4,7 @@ import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
 
 import logoLarge from "../assets/logo-large.png";
+import ErrorMessage from "../components/ErrorMessage";
 
 const Login = () => {
   const { setAuth } = useAuth();
@@ -47,7 +48,7 @@ const Login = () => {
       </div>
 
       <h2 className="text-2xl font-bold mb-4">Login</h2>
-      {error && <p className="text-red-500 mb-4">{error}</p>}
+      <ErrorMessage message={error} />
       <form onSubmit={handleLogin} className="space-y-4">
         <input
           type="email"

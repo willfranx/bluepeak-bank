@@ -23,7 +23,10 @@ export const transferSchema = z.object({
 });
 
 export const transferToUserSchema = z.object({
-    srcId: z.string(),
-    desId: z.string(),   
-     amount: z.number().positive(),
+    srcId: z.coerce.number().int().positive(),
+    toUserEmail: z.string().email(),
+    amount: z.coerce.number().positive(),
+}).refine((data) => !!data.srcId, {
+    message: "Source account id (srcId) is required",
+    path: ["srcId"],
 });

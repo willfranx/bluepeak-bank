@@ -170,60 +170,75 @@ export const getTransactions = async (req, res, next) => {
 
 export const transferToUser = async (req, res, next) => {
     try {
-        
-        const { srcId, desId, amount } = req.body
-        const transferAmount = Number(amount)
+        // accept either camelCase or lower-case src id sent from frontend
+        const { srcId, toUserEmail, amount } = req.body;
+        const transferAmount = Number(amount);
 
-        const scrRes = await pool.query(
+        if (!srcId) return sendResponse(res, 400, "Source account id (srcId or srcid) is required");
+        if (!toUserEmail) return sendResponse(res, 400, "Recipient email (toUserEmail) is required");
+
+        const srcRes = await pool.query(
             "SELECT balance, userid FROM accounts WHERE accountid=$1",
             [srcId]
-        )
+        );
 
-        const srcAccount = srcRes.rows[0]
+        const srcAccount = srcRes.rows[0];
 
         if (!srcAccount || srcAccount.userid !== req.user.userid) {
-            return sendResponse(res, 403, "Not authorized to transfer from this account")
+            return sendResponse(res, 403, "Not authorized to transfer from this account");
         }
 
-        const desRes = await pool.query(
-            "SELECT balance, userid FROM accounts WHERE accountid=$1",
-            [desId]
-        )
+        // find recipient user by email
+        const userRes = await pool.query(
+            "SELECT userid FROM users WHERE email=$1 LIMIT 1",
+            [toUserEmail]
+        );
 
-        const desAccount = desRes.rows[0]
-
-        if (!desAccount) {
-            return response(res, 404, "Destination account not found")
+        if (userRes.rows.length === 0) {
+            return sendResponse(res, 404, "Recipient not found");
         }
 
-        if (desAccount.userid === req.user.userid) {
-            return sendResponse(res, 400, "Use normal transfer for your own accounts")
+        const recipientUserId = userRes.rows[0].userid;
+
+        // pick a recipient account (choose the first available)
+        const accountRes = await pool.query(
+            "SELECT accountid FROM accounts WHERE userid=$1 ORDER BY accountid LIMIT 1",
+            [recipientUserId]
+        );
+
+        if (accountRes.rows.length === 0) {
+            return sendResponse(res, 404, "Recipient has no accounts to receive funds");
+        }
+
+        const desId = accountRes.rows[0].accountid;
+
+        if (recipientUserId === req.user.userid) {
+            return sendResponse(res, 400, "Use normal transfer for your own accounts");
         }
 
         if (parseFloat(srcAccount.balance) < transferAmount) {
-            return sendResponse(res, 400, "Insufficient funds")
+            return sendResponse(res, 400, "Insufficient funds");
         }
 
         await pool.query(
             "UPDATE accounts SET balance = balance - $1 WHERE accountid=$2",
             [transferAmount, srcId]
-        )
+        );
 
         await pool.query(
             "UPDATE accounts SET balance = balance + $1 WHERE accountid=$2",
             [transferAmount, desId]
-        )
+        );
 
         const transferRes = await pool.query(
             `INSERT INTO transactions (srcid, desid, amount, type, created, approved, complete)
-            VALUES ($1, $2, $3, 'external_transfer', NOW(), true, true) RETURNING *`,
+            VALUES ($1, $2, $3, 'transfer', NOW(), true, true) RETURNING *`,
             [srcId, desId, transferAmount]
-        )
+        );
 
-        return sendResponse(res, 201, "Transfer to user successful", transferRes.rows[0])
+        return sendResponse(res, 201, "Transfer to user successful", transferRes.rows[0]);
 
-        
     } catch (error) {
-        next(error)
+        next(error);
     }
-}
+};

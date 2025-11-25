@@ -24,3 +24,8 @@ export const updatePasswordSchema = z.object({
         .regex(/[0-9]/, "Must contain a number")
         .regex(/[^A-Za-z0-9]/, "Must contain a special character") 
 })
+
+export const updateProfileSchema = z.object({
+    name: z.string().min(1).optional(),
+    email: z.string().email().optional(),
+});
