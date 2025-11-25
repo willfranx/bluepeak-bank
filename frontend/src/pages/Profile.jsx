@@ -18,8 +18,6 @@ const Profile = () => {
   const [newPwd, setNewPwd] = useState("");
   const [busy, setBusy] = useState(false);
 
-  // use shared formatApiError util
-
   useEffect(() => {
     if (!auth?.accessToken) return;
 

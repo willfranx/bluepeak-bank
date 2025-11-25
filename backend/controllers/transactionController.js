@@ -170,7 +170,6 @@ export const getTransactions = async (req, res, next) => {
 
 export const transferToUser = async (req, res, next) => {
     try {
-        // accept either camelCase or lower-case src id sent from frontend
         const { srcId, toUserEmail, amount } = req.body;
         const transferAmount = Number(amount);
 
@@ -239,6 +238,6 @@ export const transferToUser = async (req, res, next) => {
         return sendResponse(res, 201, "Transfer to user successful", transferRes.rows[0]);
 
     } catch (error) {
-        next(error);
+        console.error(`error:`, error);
     }
 };

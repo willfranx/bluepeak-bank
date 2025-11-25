@@ -338,7 +338,7 @@ export const login = async (req, res) => {
     }
 }
 
-// Update user's name and email
+// Update user's name and/or email
 export const updateUser = async (req, res) => {
   try {
     if (!req.user) return sendResponse(res, 401, "Not authenticated");
