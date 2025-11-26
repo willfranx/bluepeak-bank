@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 
 export default function Verify() {
@@ -9,6 +10,7 @@ export default function Verify() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { auth: currentAuth, setAuth } = useAuth();
 
   const submit = async (e) => {
     e.preventDefault();
@@ -17,16 +19,40 @@ export default function Verify() {
       setMessage("Please enter both email and code");
       return;
     }
+    const isNewEmail = location.state?.mode === "newemail";
 
     try {
       setLoading(true);
-      const res = await api.post("/verify-email", { email, otp });
-      if (res.data && res.data.success) {
-        setMessage(res.data.message || "Verified successfully");
-        // optionally redirect to login
-        setTimeout(() => navigate("/login"), 900);
+      if (isNewEmail) {
+        // verify new email flow uses different endpoint and payload
+        const res = await api.post("/auth/verify-newemail-otp", { newemail: email, otp });
+        if (res.data && res.data.success) {
+          setMessage(res.data.message || "New email verified successfully");
+          // fetch updated profile and update auth state so UI reflects new email immediately
+          try {
+            const profileRes = await api.get("/auth/profile", { withCredentials: true });
+            if (profileRes.data && profileRes.data.success) {
+              const u = profileRes.data.data;
+              setAuth({ accessToken: currentAuth?.accessToken, userid: u.userid, name: u.name, email: u.email });
+            }
+          } catch (err) {
+            console.warn("Could not refresh profile after email verification:", err);
+          }
+
+          // return to profile since this was an in-account change
+          setTimeout(() => navigate("/profile"), 900);
+        } else {
+          setMessage(res.data?.message || "Verification failed");
+        }
       } else {
-        setMessage(res.data?.message || "Verification failed");
+        const res = await api.post("/verify-email", { email, otp });
+        if (res.data && res.data.success) {
+          setMessage(res.data.message || "Verified successfully");
+          // optionally redirect to login
+          setTimeout(() => navigate("/login"), 900);
+        } else {
+          setMessage(res.data?.message || "Verification failed");
+        }
       }
     } catch (err) {
       setMessage(err.response?.data?.message || err.message || "Error verifying");
@@ -41,14 +67,24 @@ export default function Verify() {
       setMessage("Please enter the email to resend the code");
       return;
     }
+    const isNewEmail = location.state?.mode === "newemail";
 
     try {
       setLoading(true);
-      const res = await api.post("/resend-token", { email });
-      if (res.data && res.data.success) {
-        setMessage(res.data.message || "OTP resent successfully");
+      if (isNewEmail) {
+        const res = await api.post("/auth/resend-newemail-otp", { newemail: email });
+        if (res.data && res.data.success) {
+          setMessage(res.data.message || "OTP resent successfully");
+        } else {
+          setMessage(res.data?.message || "Failed to resend OTP");
+        }
       } else {
-        setMessage(res.data?.message || "Failed to resend OTP");
+        const res = await api.post("/resend-token", { email });
+        if (res.data && res.data.success) {
+          setMessage(res.data.message || "OTP resent successfully");
+        } else {
+          setMessage(res.data?.message || "Failed to resend OTP");
+        }
       }
     } catch (err) {
       setMessage(err.response?.data?.message || err.message || "Error resending OTP");
