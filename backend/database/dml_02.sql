@@ -23,12 +23,12 @@ VALUES
 -- ============================================
 -- Passwords here are plain text for example purposes.
 -- In production, we always store hashed passwords.
-INSERT INTO users (name, email, phonenumber) VALUES
-('ahmed', 'ahmed@example.com', '+15551234567'),
-('chris', 'chris@example.com', '+15559876543'),
-('keegan', 'keegan@example.com', NULL),
-('william', 'william@example.com', '+15557654321'),
-('aswin', 'aswin@example.com', '+15553456789');
+INSERT INTO users (name, email) VALUES
+('ahmed', 'ahmed@example.com'),
+('chris', 'chris@example.com'),
+('keegan', 'keegan@example.com'),
+('william', 'william@example.com'),
+('aswin', 'aswin@example.com');
 
 -- ============================================
 -- PASSWORD SEEDS
