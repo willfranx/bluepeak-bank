@@ -35,19 +35,12 @@ CREATE TABLE IF NOT EXISTS users (
     emailotp VARCHAR(10),
     emailotpexpires TIMESTAMP,
     isverified BOOLEAN DEFAULT FALSE,
-    emailverified BOOLEAN DEFAULT FALSE,
-    phonenumber VARCHAR(16) UNIQUE
-        --Enforce international phone numbers (E.164 format).
-        CHECK (
-            phonenumber IS NULL
-            OR
-            phonenumber ~ '^\+\d{1,15}$'
-        ),
-    phoneverified BOOLEAN DEFAULT FALSE,
+    newemail VARCHAR(60) UNIQUE NULL,
+    isnewemailverified BOOLEAN DEFAULT FALSE,
     islocked BOOLEAN DEFAULT FALSE,
     lockoutend TIMESTAMP NULL,
     created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    --Needs updated each time a change to the user or password occurs.
+    --updated each time a change to the user or password occurs.
     updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
