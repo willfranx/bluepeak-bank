@@ -5,6 +5,8 @@ import { generateOTP } from "../utils/opt.js";
 
 export const verifyOTP= async (req, res) => {
     const { email, otp } = req.body;
+    
+    //   if (!email || !otp) return sendResponse(res, 400, "Email and token are required");
 
     try {
         const findUser = await pool.query(
