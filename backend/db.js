@@ -7,19 +7,17 @@ dotenv.config();
 
 const { Pool } = pg;
 
-//Connection Pools: reusable DB connections.
-// const pool = new Pool({
-//   host: process.env.DB_HOST || "localhost",
-//   port: process.env.DB_PORT || 5432,
-//   user: process.env.DB_USER,
-//   password: process.env.DB_PASSWORD,
-//   database: process.env.DB_NAME,
-// });
 
 // // Make the pools available to other modules in the app.
 const pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false} : false
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT || 5432,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  ssl: process.env.NODE_ENV === "production" 
+    ? { rejectUnauthorized: false }
+    : false
 });
 
 // Make the pools avail

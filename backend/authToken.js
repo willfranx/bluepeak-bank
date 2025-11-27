@@ -13,6 +13,6 @@ export const createRefreshToken = (userid, tokenId = randomUUID()) => {
   return jwt.sign(
     { userid, tokenId },
     process.env.REFRESH_SECRET,
-    { expiresIn: "5m" }
+    { expiresIn: "12h" }
   );
 };

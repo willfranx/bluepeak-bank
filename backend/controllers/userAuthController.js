@@ -10,7 +10,7 @@ import { generateOTP } from "../utils/opt.js";
 const refreshCookieOptions = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
-  sameSite: "Lax",
+  sameSite: "Strict",
   maxAge: 5 * 60 * 1000, // 5 mins
 };
 
@@ -134,7 +134,7 @@ const isUserLocked = async (userid, islocked, lockoutend) => {
     );
 
     if (finalIsLocked.rows.length < 1) {
-      console.error(`isUserLocked: No user found for ${email}`);
+      console.error(`isUserLocked: No user found for ${userid}`);
       return false;
     }
 
@@ -181,7 +181,7 @@ const logUserEvent = async (userid, event) => {
 
 
 // Register a new user
-export const register = async (req, res, next) => {
+export const register = async (req, res) => {
   const { name, email, password } = req.body;
   
   try {
@@ -217,28 +217,12 @@ export const register = async (req, res, next) => {
         [name, email, otp, otpExpires]
     );
 
-    const userid = newUser.rows[0].userid;
+    const user = newUser.rows[0];
 
     // insert the password into the passwords table
-    const newPassword = await pool.query(
-        "INSERT INTO passwords (userid, hash) VALUES ($1, $2) RETURNING userid",
-        [userid, passwordHash]
-    );
-
-    // Compute random starting balances in JavaScript (500.00 - 1000.00)
-    const checkingBalance = Number((Math.random() * 500 + 500).toFixed(2));
-    const savingsBalance = Number((Math.random() * 500 + 500).toFixed(2));
-
-    // Create default accounts for the new user
-
-    const defaultChecking = await pool.query(
-      `INSERT INTO accounts (userid, name, type, balance) VALUES ($1, $2, $3, $4) RETURNING *`,
-      [userid, `Checking ${userid}`, 'checking', checkingBalance]
-    );
-
-    const defaultSavings = await pool.query(
-      `INSERT INTO accounts (userid, name, type, balance) VALUES ($1, $2, $3, $4) RETURNING *`,
-      [userid, `Savings ${userid}`, 'saving', savingsBalance]
+    await pool.query(
+      "INSERT INTO passwords (userid, hash, iscurrent) VALUES ($1, $2, true)",
+      [user.userid, passwordHash]
     );
 
     // Send OTP email
@@ -246,8 +230,8 @@ export const register = async (req, res, next) => {
     await pool.query("COMMIT");
 
     // Issue tokens
-    const accessToken = createAccessToken(userid);
-    const refreshToken = createRefreshToken(userid);
+    const accessToken = createAccessToken(user.userid);
+    const refreshToken = createRefreshToken(user.userid);
 
     res.cookie("refreshToken", refreshToken, refreshCookieOptions);
 
@@ -261,7 +245,7 @@ export const register = async (req, res, next) => {
 
     return sendResponse(res, 201, "User registered. Verify OTP sent to email.", {
       accessToken,
-      userid: newUser.rows[0].userid,
+      userid: user.userid,
     })
 
   } catch (error) {
@@ -284,7 +268,7 @@ const isValidUserCredentials = async (email, password) => {
   try {   
     // authenticate user email
     const findUser = await pool.query(
-    "SELECT * FROM users WHERE email = $1 OR name = $1", [email]);
+    "SELECT * FROM users WHERE email = $1", [email]);
 
     if (findUser.rows.length === 0) {
         return { success: false, errorCode: "INVALID_CREDENTIALS", message: "Invalid credentials" };
@@ -376,8 +360,7 @@ export const login = async (req, res, next) => {
 
 
 export const refreshAccessToken = async (req, res) => {
-  console.log("Raw cookie header:", req.headers.cookie); // should print the full string
-  console.log("req.cookies:", req.cookies); // parsed object
+
   const refreshToken = req.cookies.refreshToken
   if (!refreshToken) return sendResponse(res, 401, "Refresh token missing")
 
@@ -418,7 +401,7 @@ export const logout = async (req, res) => {
     res.clearCookie("refreshToken", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "Lax",
+      sameSite: "Strict",
     })
 
     return sendResponse(res, 200, "User is logged out");
@@ -479,21 +462,32 @@ export const updatePassword = async (req, res, next) => {
     const user = userResult.user
 
     //Hash and insert the new password into passwords
-    const passwordHash = await argon2.hash(newPassword, {
+    const newPasswordHash = await argon2.hash(newPassword, {
       type: argon2.argon2id,
       memoryCost: 9216,
       timeCost: 4,
       parallelism: 1
     });
 
+    // Mark oldpassowrd as not current
+    await pool.query("BEGIN")
+
+    await pool.query(
+      "UPDATE passwords SET iscurrent = false WHERE userid = $1",
+      [user.userid]
+    )
+
     const insertedPassword = await pool.query(
-        "INSERT INTO passwords (userid, hash) VALUES ($1, $2) RETURNING userid",
-        [user.userid, passwordHash]
+      "INSERT INTO passwords (userid, hash, iscurrent) VALUES ($1, $2, true) RETURNING userid",
+      [user.userid, newPasswordHash]
     );
 
-    if (insertedPassword.rows.length === 0) {
-        return sendResponse(res, 500, "Failed to add password to passwords");
+    if (!insertedPassword.rows.length) {
+        await pool.query("ROLLBACK")
+        return sendResponse(res, 500, "Failed to update password");
     }
+
+    await pool.query("COMMIT")
 
     // return success response
     return sendResponse(res, 200, "Password updated successfully.", {
