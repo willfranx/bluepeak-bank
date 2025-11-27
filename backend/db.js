@@ -3,6 +3,8 @@
 import pg from "pg";
 import dotenv from "dotenv"
 
+dotenv.config();
+
 const { Pool } = pg;
 
 //Connection Pools: reusable DB connections.
@@ -15,11 +17,9 @@ const { Pool } = pg;
 // });
 
 // // Make the pools available to other modules in the app.
-
-
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false} : false
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false} : false
 });
 
 // Make the pools avail

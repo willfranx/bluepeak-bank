@@ -101,7 +101,7 @@ export const verifyNewEmailOTP = async (req, res) => {
                   [newemail, user.userid]
         )
 
-        return sendResponse(res, 200, "Email verified successfully. You can now log in.")
+        return sendResponse(res, 200, "Email verified successfully.")
     } catch (error) {
         console.error("OTP verification error:", error)
         return sendResponse(res, 500, "Error verifying OTP");
