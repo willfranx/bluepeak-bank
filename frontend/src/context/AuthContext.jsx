@@ -54,9 +54,12 @@ export const AuthProvider = ({ children }) => {
         return null;
       }
     } catch (err) {
-      console.error("Refresh token failed:", err);
-      setAuth(null);
-      return null;
+     if (err.response?.status === 401) {
+          setAuth(null);
+        } else {
+          console.error("Unexpected refresh token error:", err);
+        }
+        return null;
     } finally {
       setLoading(false);
     }
@@ -64,8 +67,9 @@ export const AuthProvider = ({ children }) => {
 
   // Initial check on app load
   useEffect(() => {
-    refreshAccessToken();
-  }, [refreshAccessToken]);
+    if (!auth) refreshAccessToken();
+  }, [auth, refreshAccessToken]);
+
 
   // Automatic token refresh every 50 seconds (if access token is 1 min)
   useEffect(() => {
