@@ -25,9 +25,8 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Inject API URL for Vite build
-        run: |
-          echo "VITE_API_URL=${{ secrets.REACT_APP_API_URL_SECRET }}" > frontend/.env
+      - name: Set environment variables
+        run: echo "VITE_API_URL=${{ secrets.VITE_API_URL }}" >> $GITHUB_ENV
           
       - name: Build And Deploy
         id: builddeploy
@@ -56,6 +55,7 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_BLUE_BUSH_0FB62051E }}
           action: "close"
+
 
 
 
