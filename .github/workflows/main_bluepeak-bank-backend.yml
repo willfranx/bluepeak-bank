@@ -12,6 +12,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      VITE_API_URL: ${{ secrets.VITE_API_URL }} 
+
     permissions:
       contents: read #This is required for actions/checkout
 
@@ -64,3 +67,4 @@ jobs:
           package: .
 
           
+
