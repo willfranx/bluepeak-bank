@@ -47,7 +47,80 @@ export default function Accounts() {
         ) : error ? (
           <div className="text-sm text-red-400">{error}</div>
         ) : accounts.length === 0 ? (
-          <div className="py-4 text-center text-sm text-gray-500">No accounts to display.</div>
+          <div className="py-4 text-center text-sm text-gray-500">
+            <div>No accounts to display.</div>
+            <div className="mt-3">
+              <button
+                className="px-3 py-1 bg-green-600 rounded hover:bg-green-700 text-white text-sm"
+                onClick={() => setShowAdd(true)}
+              >
+                Add Your First Account
+              </button>
+            </div>
+
+            {showAdd && (
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  setMessage("");
+
+                  const payload = {
+                    name: addName,
+                    accountType: addType,
+                    balance: Number(addBalance || 0),
+                  };
+                  try {
+                    setAdding(true);
+                    // include userid if backend requires it, otherwise server will use req.user
+                    if (payload.userId === undefined) delete payload.userId;
+                    const res = await api.post(`/accounts`, payload);
+                    if (res.data && res.data.success) {
+                      setMessage("Account created");
+                      setAddName("");
+                      setAddBalance(0);
+                      setShowAdd(false);
+                      const r = await api.get(`/accounts`);
+                      if (r.data && r.data.success) setAccounts(r.data.data || []);
+                    } else {
+                      setMessage(res.data?.message || "Failed to create account");
+                    }
+                  } catch (err) {
+                    setMessage(err.response?.data?.message || err.message || "Error creating account");
+                  } finally {
+                    setAdding(false);
+                  }
+                }}
+                className="mb-3 space-y-2 mt-3"
+              >
+                <input
+                  value={addName}
+                  onChange={(e) => setAddName(e.target.value)}
+                  placeholder="Account name"
+                  className="w-full px-3 py-2 rounded bg-gray-900 text-gray-100"
+                  required
+                />
+                <div className="flex gap-2">
+                  <select value={addType} onChange={(e) => setAddType(e.target.value)} className="px-3 py-2 rounded bg-gray-900 text-gray-100">
+                    <option value="checking">Checking</option>
+                    <option value="saving">Saving</option>
+                  </select>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={addBalance}
+                    onChange={(e) => setAddBalance(e.target.value)}
+                    placeholder="Starting balance"
+                    className="flex-1 px-3 py-2 rounded bg-gray-900 text-gray-100"
+                  />
+                </div>
+                <div>
+                  <button disabled={adding} className="px-3 py-2 bg-blue-600 rounded text-white">
+                    {adding ? "Adding…" : "Create Account"}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
         ) : (
           <div>
             <div className="flex items-center justify-between mb-3">
