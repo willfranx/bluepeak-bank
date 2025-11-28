@@ -10,7 +10,7 @@ import { generateOTP } from "../utils/opt.js";
 const refreshCookieOptions = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
-  sameSite: "Strict",
+  sameSite: "none",
   maxAge: 5 * 60 * 1000, // 5 mins
 };
 
@@ -401,7 +401,7 @@ export const logout = async (req, res) => {
     res.clearCookie("refreshToken", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "Strict",
+      sameSite: "none",
     })
 
     return sendResponse(res, 200, "User is logged out");
