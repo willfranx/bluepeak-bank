@@ -24,7 +24,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'
+          node-version: '24.x'
 
       - name: Set environment variables
         run: echo "VITE_API_URL=${{ secrets.VITE_API_URL }}" >> $GITHUB_ENV
@@ -47,6 +47,7 @@ jobs:
           app_location: "./frontend"
           api_location: "" 
           output_location: "dist"
+          node_version: '24'
 
       - name: Close Pull Request
         if: github.event_name == 'pull_request' && github.event.action == 'closed'
@@ -54,6 +55,7 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_BLUE_BUSH_0FB62051E }}
           action: "close"
+
 
 
 
