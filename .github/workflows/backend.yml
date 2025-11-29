@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'backend/**'
   workflow_dispatch:
 
 jobs:
@@ -40,5 +42,6 @@ jobs:
           app-name: 'bluepeak-bank-backend'
           slot-name: 'Production'
           package: ./backend
+
 
 
