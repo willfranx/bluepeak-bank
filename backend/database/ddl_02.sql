@@ -88,9 +88,6 @@ CREATE TABLE IF NOT EXISTS accounts (
     type VARCHAR(8) NOT NULL
         CHECK (type in ('checking', 'saving')),
     balance NUMERIC(12,2) DEFAULT 0.00,
-    accnumciphertext BYTEA,
-    nonce BYTEA,
-    accnumhash CHAR(64),
     created TIMESTAMP DEFAULT CURRENT_TIMESTAMP        
 );
 
