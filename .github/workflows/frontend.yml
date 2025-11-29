@@ -5,8 +5,12 @@ on:
     branches:
       - main
       
+  pull_request:
+    types: [closed] 
+    
 jobs:
   build_and_deploy_job:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     name: Build and Deploy Frontend
 
@@ -50,5 +54,6 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_BLUE_BUSH_0FB62051E }}
           action: "close"
+
 
 
