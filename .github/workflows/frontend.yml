@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    paths:
+    - 'frontend/**'
   workflow_dispatch:   
   pull_request:
     types: [closed] 
@@ -52,6 +54,7 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_BLUE_BUSH_0FB62051E }}
           action: "close"
+
 
 
 
