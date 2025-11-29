@@ -172,6 +172,10 @@ The backend service is built with **Node.js**, **Express**, **PostgreSQL**. It p
 
 The entire system is containerized and deployed on **Azure App Service**. It is automated with CI/CD pipeline using **GitHub Actions**.
 
+## Database Schema
+
+![ddl_02Schema.drawio](assets/ddl_02Schema.drawio.png)
+
 ## Database Setup
 
 Database schema and initial data are managed with **SQL files** (DDL for schema, DML for initial data).
