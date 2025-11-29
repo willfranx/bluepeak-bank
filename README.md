@@ -54,6 +54,155 @@ and lastly, the profile page, where you can view and change your username and em
 ![Make profile changes](frontend/src/assets/read-me/profile.jpg)
 
 ## Back-end (Server side)
+![Architecture](assets/architecture.png)
+
+The backend service is built with **Node.js**, **Express**, **PostgreSQL**. It provides service such as authentication, user management, transactions, and communication with the React frontend.
+
+The entire system is containerized and deployed on **Azure App Service**. It is automated with CI/CD pipeline using **GitHub Actions**.
+
+
+## Tech Stack
+
+### **Backend**
+- Node.js
+- Express.js 
+- PostgreSQL  
+- Argon2 (password hashing)
+- JSON Web Tokens (Access & Refresh Tokens)
+- Nodemailer (OPT verification)
+- express-rate-limit (rate limits)
+- Zod (validations)
+
+### **DevOps / Infrastructure**
+- Azure App Service 
+- Azure Database for PostgreSQL
+- Azure Managed Identity 
+- Github Actions (CI/CD)
+- Github Secrets
+- Docker 
+
+---
+
+
+## **Security**
+
+This backend is built with strong security:
+
+- **JWT Authentication**
+  - **Access Token:** short-lived (10 minutes), sent in `Authorization` header and used for route protection
+  - **Refresh Token:** long-lived (12 hours), stored in `HTTP-only` cookies and used to renew access tokens securely
+
+- **Password Security:** passwords hashed with **Argon2** for strong protection
+
+- **Email Verification:** OTPs sent via **Nodemailer + Gmail** to confirm user account actions
+
+- **Secrets & Environment:** secret keys stored in **GitHub Secrets** and **Azure App Service**
+
+- **Other Protections include:** CORS, Helmet, rate limiting, and request validation
+
+
+## Project Structure
+
+```text
+backend/
+├── controllers/       # Request handlers & Business logic
+├── routes/            # API routes
+├── middleware/        # Security & validation middleware
+├── utils/             # Helpers (tokens, email, etc.)
+├── database/          # Environment + DB setup
+└── server.js          # Main app entry
+```
+
+## **Setup**
+
+### **1. Clone repository**
+```sh
+git clone https://github.com/cs467-web-sec-research-project-fall-25/bluepeak-bank.git
+````
+
+### **2. Install dependencies**
+
+```sh
+cd backend
+npm install
+```
+
+### **3. Create environment file**
+
+```sh
+cp .env.example .env and provide environment variables  
+```
+
+### **4. Start development server**
+
+```sh
+npm run dev
+```
+
+## Database Setup
+
+Database schema and initial data are managed with **SQL files** (DDL for schema, DML for initial data).
+
+### Steps to set up the database:
+
+```sh
+# 1. Create the database 
+# 2. Run the SQL files in order (DDL first, then DML)
+psql -h <host> -U <user> -d <database> -f ./database/ddl_02.sql
+psql -h <host> -U <user> -d <database> -f ./database/dml_02.sql
+
+```
+
+---
+
+## **Running with Docker**
+
+```sh
+docker compose up --build
+```
+
+Docker will start:
+
+* Backend API
+* PostgreSQL
+* React
+
+---
+
+## **API Endpoints**
+
+### **Users**
+
+```
+POST /api/auth/register
+POST /api/auth/login
+POST /api/auth/refresh-token
+POST /api/auth/logout
+POST /api/auth/verify-otp
+GET /api/users/profile
+PUT /api/users/update-password
+```
+
+### **Accounts**
+
+```
+GET /api/accounts
+POST /api/accounts
+DEL /api/accounts/:id
+```
+
+### **Transactions**
+
+```
+GET /api/transactions
+POST /api/transactions/deposit
+POST /api/transactions/withdraw
+POST /api/transactions/transfer
+POST /api/transactions/send
+```
+
+---
+
 
 ## Attacks/exploits and mitigations
 
