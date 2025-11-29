@@ -239,4 +239,147 @@ POST /api/transactions/send
 
 ## Attacks/exploits and mitigations
 
+### 1. Plaintext Password Storage
+
+**Exploit**: User passwords were stored and returned in plaintext during registration and login.  
+**Impact**: Anyone with access to logs, network traffic, or the database could steal all credentials instantly.
+
+#### Mitigation Implemented:
+
+- All passwords are hashed using Argon2 before being stored.
+
+- API responses never return password fields.
+
+- Sensitive database fields are excluded from all queries and serializers.
+
+### 2. Login via GET (Credential Leakage)
+
+**Exploit**: Login credentials were transmitted through query parameters.  
+**Impact**: GET URLs leak sensitive information into browser history, logs, proxies, analytics, and referrer headers.
+
+#### Mitigation Implemented:
+
+- Secure version uses POST requests only.
+
+- Credentials are sent in the request body, not the URL.
+
+- Zod validation checks ensure only properly structured requests pass.
+
+### 3. IDOR – Insecure Direct Object Reference
+
+**Exploit**: Anyone could query GET /api/accounts/:id and retrieve any user’s account.  
+**Impact**: Full access to every user’s bank accounts without authentication.
+
+#### Mitigation Implemented:
+
+- All endpoints are protected with JWT authentication.
+
+- Account queries include strict user ownership checks.
+
+- Unauthorized access returns 403 consistently.
+
+### 4. SQL Injection (Auth Bypass)
+
+**Exploit**: User input was directly interpolated into SQL queries.  
+**Impact**: Attackers could bypass authentication or dump sensitive tables.
+
+#### Mitigation Implemented:
+
+- All queries use parameterized SQL via pg prepared statements.
+
+- Zod validation sanitizes incoming input.
+
+- SQL injection payloads now return 400 with explicit error messages.
+
+### 5. Stored XSS (Malicious Name Field)
+
+**Exploit**: Unsanitized user input stored <script> tags in the database.  
+**Impact**: Attacker-controlled JavaScript executes whenever data is rendered.
+
+#### Mitigation Implemented:
+
+- Frontend disallows any HTML injection.
+
+- Backend sanitizes inputs and rejects dangerous patterns.
+
+- React never uses dangerouslySetInnerHTML.
+
+### 6. Insecure Deserialization / Prototype Pollution
+
+**Exploit**: Sending a __proto__ property modified global object prototypes.  
+**Impact**: Could escalate privileges (e.g., spoof isAdmin: true).
+
+#### Mitigation Implemented:
+
+- All request bodies are validated strictly with Zod schemas.
+
+- Dangerous object keys like __proto__, constructor, prototype are rejected.
+
+- Secure version never exposes unsafe deserialization endpoints.
+
+### 7. No Session Token After Login
+
+**Exploit**: No cookies, no session tracking, and no user state.  
+**Impact**: Anyone could impersonate any user with a single API call.
+
+#### Mitigation Implemented:
+
+- JWT authentication added:
+
+- Access Token (short-lived)
+
+- Refresh Token (HTTP-only cookie)
+
+- Tokens are required for all protected routes.
+
+### 8. No Rate Limiting (Brute Force Attacks)
+
+**Exploit**: Login endpoint allowed unlimited guesses.  
+**Impact**: Attackers could brute-force passwords at scale.
+
+#### Mitigation Implemented:
+
+- express-rate-limit added to login, OTP, and sensitive routes.
+
+- Repeated failed attempts temporarily lock the endpoint.
+
+### 9. Misconfigured CORS (Wildcard Origin)
+
+**Exploit**: Backend allowed Access-Control-Allow-Origin: *.  
+**Impact**: Any website could make authenticated requests on behalf of users.
+
+#### Mitigation Implemented:
+
+- Strict CORS origin whitelist
+
+- Cookies marked SameSite=Strict
+
+- No cross-domain credential leakage
+
+### 10. Weak Logging (Morgan Only)
+
+**Exploit**: Morgan only logs paths + status codes.  
+**Impact**: No forensic ability to detect attacks or suspicious patterns.
+
+#### Mitigation Implemented:
+
+- Structured security logging
+
+- Logging of failed logins, invalid tokens, suspicious behavior
+
+- Improved log visibility for debugging and audit
+
+### 11. Direct Database Dump
+
+**Exploit**: Database allowed direct credential exposure through environment variables.  
+**Impact**: Anyone with container access could dump all data.
+
+#### Mitigation Implemented:
+
+- Sensitive values stored in Azure Key Vault / GitHub Secrets
+
+- Environment variables no longer stored in plaintext in containers
+
+- Database users given scoped permissions
+
 ## Pen testing (How-to)
