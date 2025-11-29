@@ -22,7 +22,7 @@ jobs:
 
       - name: npm install dependencies
         working-directory: backend
-        run: npm ci
+        run: npm install
 
       - name: Build backend
         working-directory: backend
@@ -65,6 +65,7 @@ jobs:
           app-name: 'bluepeak-bank-backend'
           slot-name: 'Production'
           package: .
+
 
 
 
