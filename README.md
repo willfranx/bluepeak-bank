@@ -3,7 +3,119 @@ a simple banking web app used to demonstrate security vulnerabilities, test mali
 
 ***Note***: this is the secure version of our app, the insecure version which can be used to test vulnerabilities and exploits can be found here: [bluepeak-insecure](https://github.com/willfranx/bluepeak-insecure)
 
-The live site can be found here:
+The live site can be found here: [BluePeak Bank](https://blue-bush-0fb62051e.3.azurestaticapps.net)
+
+## Tech Stack
+
+### **Back-end**
+- Node.js
+- Express.js 
+- PostgreSQL  
+- Argon2 (password hashing)
+- JSON Web Tokens (Access & Refresh Tokens)
+- Nodemailer (OPT verification)
+- express-rate-limit (rate limits)
+- Zod (validations)
+
+### **Front-end**
+- React (functional components, hooks)
+- Vite (development build tooling)
+- React Router (`react-router-dom`) for client routing
+- Axios for API requests (with credentials + interceptors)
+- Tailwind-style utility classes / CSS for styling
+
+### **DevOps / Infrastructure**
+- Azure App Service 
+- Azure Database for PostgreSQL
+- Azure Managed Identity 
+- Github Actions (CI/CD)
+- Github Secrets
+- Docker 
+
+---
+
+## **Security**
+
+This backend is built with strong security:
+
+- **JWT Authentication**
+  - **Access Token:** short-lived (10 minutes), sent in `Authorization` header and used for route protection
+  - **Refresh Token:** long-lived (12 hours), stored in `HTTP-only` cookies and used to renew access tokens securely
+
+- **Password Security:** passwords hashed with **Argon2** for strong protection
+
+- **Email Verification:** OTPs sent via **Nodemailer + Gmail** to confirm user account actions
+
+- **Secrets & Environment:** secret keys stored in **GitHub Secrets** and **Azure App Service**
+
+- **Other Protections include:** CORS, Helmet, rate limiting, and request validation
+
+
+## Project Structure
+
+```text
+backend/
+├── controllers/       # Request handlers & Business logic
+├── routes/            # API routes
+├── middleware/        # Security & validation middleware
+├── utils/             # Helpers (tokens, email, etc.)
+├── database/          # Environment + DB setup
+└── server.js          # Main app entry
+
+frontend/
+├── src/
+│   ├── pages/          # Page-level components (Accounts, Profile, Login, etc.)
+│   ├── components/     # Small reusable UI components (NavBar, etc.)
+│   ├── context/        # Auth context + protected route helper
+│   ├── services/       # API client (axios) and helpers
+│   └── assets/         # Images and static assets
+└── public/             # Static public files
+```
+
+## **Setup**
+
+### **Clone repository**
+```sh
+git clone https://github.com/cs467-web-sec-research-project-fall-25/bluepeak-bank.git
+```
+
+### **Create environment file**
+
+```sh
+cp .env.example .env and provide environment variables  
+```
+
+### **Recommended: Run the full app with Docker Compose**
+
+The repository is configured to run the frontend, backend and database together with Docker Compose. This is the easiest way to bring up a complete local environment:
+
+```sh
+docker compose up --build
+```
+
+This will build and start the React frontend, the Express API, and a PostgreSQL container.
+
+### **Alternative method: Run services individually**
+
+If you prefer to run services individually during development, you can still run the backend and frontend separately:
+
+- Backend (from the `backend/` folder):
+
+```sh
+cd backend
+npm install
+npm run dev
+```
+
+- Frontend (from the `frontend/` folder):
+
+```sh
+cd frontend
+npm install
+npm run dev
+```
+
+When running the frontend locally without Docker, set `VITE_API_URL` in your frontend environment (for example `VITE_API_URL=http://localhost:8001`) so the client can reach the API.
 
 ## Front-end (Client side)
 
@@ -59,85 +171,6 @@ and lastly, the profile page, where you can view and change your username and em
 The backend service is built with **Node.js**, **Express**, **PostgreSQL**. It provides service such as authentication, user management, transactions, and communication with the React frontend.
 
 The entire system is containerized and deployed on **Azure App Service**. It is automated with CI/CD pipeline using **GitHub Actions**.
-
-
-## Tech Stack
-
-### **Backend**
-- Node.js
-- Express.js 
-- PostgreSQL  
-- Argon2 (password hashing)
-- JSON Web Tokens (Access & Refresh Tokens)
-- Nodemailer (OPT verification)
-- express-rate-limit (rate limits)
-- Zod (validations)
-
-### **DevOps / Infrastructure**
-- Azure App Service 
-- Azure Database for PostgreSQL
-- Azure Managed Identity 
-- Github Actions (CI/CD)
-- Github Secrets
-- Docker 
-
----
-
-
-## **Security**
-
-This backend is built with strong security:
-
-- **JWT Authentication**
-  - **Access Token:** short-lived (10 minutes), sent in `Authorization` header and used for route protection
-  - **Refresh Token:** long-lived (12 hours), stored in `HTTP-only` cookies and used to renew access tokens securely
-
-- **Password Security:** passwords hashed with **Argon2** for strong protection
-
-- **Email Verification:** OTPs sent via **Nodemailer + Gmail** to confirm user account actions
-
-- **Secrets & Environment:** secret keys stored in **GitHub Secrets** and **Azure App Service**
-
-- **Other Protections include:** CORS, Helmet, rate limiting, and request validation
-
-
-## Project Structure
-
-```text
-backend/
-├── controllers/       # Request handlers & Business logic
-├── routes/            # API routes
-├── middleware/        # Security & validation middleware
-├── utils/             # Helpers (tokens, email, etc.)
-├── database/          # Environment + DB setup
-└── server.js          # Main app entry
-```
-
-## **Setup**
-
-### **1. Clone repository**
-```sh
-git clone https://github.com/cs467-web-sec-research-project-fall-25/bluepeak-bank.git
-````
-
-### **2. Install dependencies**
-
-```sh
-cd backend
-npm install
-```
-
-### **3. Create environment file**
-
-```sh
-cp .env.example .env and provide environment variables  
-```
-
-### **4. Start development server**
-
-```sh
-npm run dev
-```
 
 ## Database Setup
 
